@@ -1,53 +1,49 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
+const lightTheme = {
+  text: '#121212',
+  background: '#F5F5F5',
+  tint: '#1DB954',
+  icon: '#666666',
+  tabIconDefault: '#666666',
+  tabIconSelected: '#1DB954',
+  cardBg: '#FFFFFF',
+  cardBg2: '#F0F0F0',
+  greenPrimary: '#1DB954',
+  greenDark: '#158A3B',
+  greenAlpha: '#1DB95420',
+  textPrimary: '#121212',
+  textSecondary: '#666666',
+  border: '#E0E0E0',
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+const darkTheme = {
+  text: '#FFFFFF',
+  background: '#0D0D0D',
+  tint: '#1DB954',
+  icon: '#A0A0A0',
+  tabIconDefault: '#A0A0A0',
+  tabIconSelected: '#1DB954',
+  cardBg: '#1A1A1A',
+  cardBg2: '#252525',
+  greenPrimary: '#1DB954',
+  greenDark: '#158A3B',
+  greenAlpha: '#1DB95420',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A0A0',
+  border: '#2A2A2A',
+};
+
+export const Colors = {
+  ...darkTheme,
+  light: lightTheme,
+  dark: darkTheme,
+};
+
+export const Typography = {
+  xs: 11, sm: 12, base: 14,
+  md: 16, lg: 20, xl: 24, xxl: 28,
+};
+
+export const Fonts = {
+  rounded: 'System',
+  mono: 'System',
+};
