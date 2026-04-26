@@ -14,6 +14,7 @@ export default function LoginScreen() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [errorEmail, setErrorEmail] = useState('');
   const [errorPassword, setErrorPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
@@ -37,16 +38,36 @@ export default function LoginScreen() {
   const isFormValid = !validateEmail(email) && !validatePassword(password);
 
 
-  const handleLogin = () => {
+
+  const handleLogin = async () => {
     setEmailTouched(true);
     setPasswordTouched(true);
+    setLoginError('');
     const emailErr = validateEmail(email);
     const passErr = validatePassword(password);
     setErrorEmail(emailErr);
     setErrorPassword(passErr);
     if (emailErr || passErr) return;
-    // Aquí iría la lógica de autenticación
-    router.replace('/(tabs)');
+
+    try {
+      const response = await fetch('http://localhost:8000/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        router.replace('/(tabs)');
+      } else {
+        setLoginError(data.message || 'Error al iniciar sesión');
+      }
+    } catch (error) {
+      setLoginError('No se pudo conectar con el servidor');
+    }
   };
 
   const handleRegister = () => {
@@ -162,6 +183,12 @@ export default function LoginScreen() {
               <Text style={styles.errorText}>{errorPassword}</Text>
             ) : null}
           </View>
+
+
+          {/* Error de login */}
+          {loginError ? (
+            <Text style={styles.errorText}>{loginError}</Text>
+          ) : null}
 
           {/* Login Button */}
           <TouchableOpacity
