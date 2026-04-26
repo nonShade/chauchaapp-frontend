@@ -1,182 +1,514 @@
-import { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import React from 'react';
+import { IncomeType } from './constants/incomeType';
+import { EconomicCategory, EconomicCategoryInfo } from './constants/economicsCategories';
+import Entypo from '@expo/vector-icons/Entypo';
+import Feather from '@expo/vector-icons/Feather';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+type FormData = {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  birthDate: Date;
+  incomeType: IncomeType;
+  incomeAmount: string;
+  spentAmount: string;
+  economicCategories: EconomicCategory[];
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
+
+const ERROR_PRIORITY: (keyof FormData)[] = [
+  'nombre', 'apellido', 'email', 'password', 'confirmPassword',
+  'birthDate', 'incomeType', 'incomeAmount', 'spentAmount', 'economicCategories',
+];
+
+const MIN_AGE = 18;
+const MAX_AGE = 100;
+
+const buildAgeDate = (yearsAgo: number) => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - yearsAgo);
+  return d;
+};
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const nameRegex = /^[\p{L}\s]+$/u;
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
+  const [step, setStep] = useState(1);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  /* Refs para saltos dentro del formulario */
+  const apellidoRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+  const incomeAmountRef = useRef<TextInput>(null);
+  const spentAmountRef = useRef<TextInput>(null);
+
+  const minDate = buildAgeDate(MIN_AGE);
+  const maxDate = buildAgeDate(MAX_AGE);
+
+  const [formData, setFormData] = useState<FormData>({
+    nombre: '',
+    apellido: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    birthDate: minDate,
+    incomeType: IncomeType.SUELDO_FIJO,
+    incomeAmount: '',
+    spentAmount: '',
+    economicCategories: [],
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  /* ─── Utilidades de formulario ─── */
+
+  const updateField = (field: keyof FormData, value: any) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+  const getFirstError = () => {
+    for (const field of ERROR_PRIORITY) {
+      if (errors[field]) return errors[field];
+    }
+    return '';
+  };
+
+  const validateField = (field: keyof FormData, value: any): boolean => {
+    let error = '';
+
+    switch (field) {
+      case 'nombre':
+        if (!value.trim()) error = 'El nombre es obligatorio';
+        else if (!nameRegex.test(value)) error = 'El nombre no puede contener caracteres especiales o numéricos';
+        break;
+      case 'apellido':
+        if (!value.trim()) error = 'El apellido es obligatorio';
+        else if (!nameRegex.test(value)) error = 'El apellido no puede contener caracteres especiales o numéricos';
+        break;
+      case 'email':
+        if (!value.trim()) error = 'El correo es obligatorio';
+        else if (!emailRegex.test(value)) error = 'El correo es inválido';
+        break;
+      case 'password':
+        if (!value.trim()) error = 'La contraseña es obligatoria';
+        else if (value.length < 6) error = 'La contraseña debe tener mínimo 6 caracteres';
+        break;
+      case 'confirmPassword':
+        if (!value.trim()) error = 'Se debe confirmar la contraseña';
+        else if (value !== formData.password) error = 'Las contraseñas deben coincidir';
+        break;
+      case 'incomeAmount':
+        if (!value.trim()) error = 'El ingreso es obligatorio';
+        else if (isNaN(Number(value))) error = 'Debe ser un número válido';
+        break;
+      case 'spentAmount':
+        if (!value.trim()) error = 'Los gastos son obligatorios';
+        else if (isNaN(Number(value))) error = 'Debe ser un número válido';
+        break;
+      case 'economicCategories':
+        if (value.length === 0) error = 'Selecciona al menos una categoría';
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return error === '';
+  };
+
+  const hasAnyErrors = (): boolean => {
+    switch (step) {
+      case 1:
+        const nombreError = !validateField('nombre', formData.nombre);
+        const apellidoError = !validateField('apellido', formData.apellido);
+        const emailError = !validateField('email', formData.email);
+        const passwordError = !validateField('password', formData.password);
+        const confirmPasswordError = !validateField('confirmPassword', formData.confirmPassword);
+        return nombreError || apellidoError || emailError || passwordError || confirmPasswordError;
+      case 2:
+        const incomeAmountError = !validateField('incomeAmount', formData.incomeAmount);
+        const spentAmountError = !validateField('spentAmount', formData.spentAmount);
+        return incomeAmountError || spentAmountError;
+      case 3:
+        const economicCategoriesError = !validateField('economicCategories', formData.economicCategories);
+        return economicCategoriesError;
+      default:
+        return false;
+    }
+  };
+
+  const toggleCategory = (category: EconomicCategory) => {
+    setFormData((prev) => {
+      const exists = prev.economicCategories.includes(category);
+      return {
+        ...prev,
+        economicCategories: exists
+          ? prev.economicCategories.filter((c) => c !== category)
+          : [...prev.economicCategories, category],
+      };
+    });
+  };
+
+  /* ─── Navegación entre pasos ─── */
+
+  const handleNext = () => {
+    if (!hasAnyErrors()) setStep((s) => s + 1);
+  };
+
+  const handleBack = () => {
+    if (step === 1) return router.back();
+    setStep((s) => s - 1);
+  };
+
   const handleRegister = () => {
-    // Aquí iría la lógica de registro
+    if (hasAnyErrors()) return;
+    const income = parseInt(formData.incomeAmount, 10);
+    if (isNaN(income)) return;
     router.replace('/(tabs)');
   };
 
-  const handleBackToLogin = () => {
-    router.back();
+  /* ─── Estilos dinámicos derivados del tema ─── */
+
+  const inputStyle = [styles.input, { backgroundColor: theme.background, color: theme.textPrimary, borderColor: theme.border }];
+  const inputErrorStyle = { borderColor: '#ff0000', backgroundColor: '#ff000010' };
+  const passwordContainerStyle = [styles.passwordContainer, { backgroundColor: theme.background, borderColor: theme.border }];
+  const gridOptionStyle = [styles.gridOption, { borderColor: theme.border }];
+  const gridActiveStyle = { borderColor: theme.greenPrimary, backgroundColor: theme.greenPrimary };
+
+  /* ─── Renderizado de pasos ─── */
+
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <View style={[styles.mainContainer, { gap: 25 }]}>
+            <View style={styles.fullnameContainer}>
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Nombre</Text>
+                <TextInput
+                  style={[inputStyle, errors.nombre && inputErrorStyle]}
+                  placeholder="Tu nombre"
+                  placeholderTextColor={theme.textSecondary}
+                  value={formData.nombre}
+                  onChangeText={(text) => updateField('nombre', text)}
+                  onBlur={() => validateField('nombre', formData.nombre)}
+                  onSubmitEditing={() => apellidoRef.current?.focus()}
+                  returnKeyType="next"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Apellido</Text>
+                <TextInput
+                  ref={apellidoRef}
+                  style={[inputStyle, errors.apellido && inputErrorStyle]}
+                  placeholder="Tu apellido"
+                  placeholderTextColor={theme.textSecondary}
+                  value={formData.apellido}
+                  onChangeText={(text) => updateField('apellido', text)}
+                  onBlur={() => validateField('apellido', formData.apellido)}
+                  onSubmitEditing={() => emailRef.current?.focus()}
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Correo electrónico</Text>
+              <TextInput
+                ref={emailRef}
+                style={[inputStyle, errors.email && inputErrorStyle]}
+                placeholder="tuemail@ejemplo.com"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(text) => updateField('email', text)}
+                onBlur={() => validateField('email', formData.email)}
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                returnKeyType="next"
+              />
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Contraseña</Text>
+              <View style={[passwordContainerStyle, errors.password && inputErrorStyle]}>
+                <TextInput
+                  ref={passwordRef}
+                  style={[styles.passwordInput, { color: theme.textPrimary }]}
+                  placeholder="Tu contraseña"
+                  placeholderTextColor={theme.textSecondary}
+                  secureTextEntry={!showPassword}
+                  value={formData.password}
+                  onChangeText={(text) => updateField('password', text)}
+                  onBlur={() => {
+                    validateField('password', formData.password);
+                    validateField('confirmPassword', formData.confirmPassword);
+                  }}
+                  onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                  returnKeyType="next"
+                />
+                <TouchableOpacity
+                  onPress={() => formData.password && setShowPassword((v) => !v)}
+                >
+                  <Entypo
+                    name={showPassword ? 'eye' : 'eye-with-line'}
+                    size={24}
+                    color={theme.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Confirmar contraseña</Text>
+              <View style={[passwordContainerStyle, errors.confirmPassword && inputErrorStyle]}>
+                <TextInput
+                  ref={confirmPasswordRef}
+                  style={[styles.passwordInput, { color: theme.textPrimary }]}
+                  placeholder="Confirma tu contraseña"
+                  placeholderTextColor={theme.textSecondary}
+                  secureTextEntry={!showConfirmPassword}
+                  value={formData.confirmPassword}
+                  onChangeText={(text) => updateField('confirmPassword', text)}
+                  onBlur={() => validateField('confirmPassword', formData.confirmPassword)}
+                  onSubmitEditing={handleNext}
+                />
+                <TouchableOpacity
+                  onPress={() => formData.confirmPassword && setShowConfirmPassword((v) => !v)}
+                >
+                  <Entypo
+                    name={showConfirmPassword ? 'eye' : 'eye-with-line'}
+                    size={24}
+                    color={theme.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        );
+
+      case 2:
+        return (
+          <View style={[styles.mainContainer, { gap: 25 }]}>
+            <View>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Fecha de nacimiento</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                <View style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, justifyContent: 'center' }, errors.birthDate && inputErrorStyle]}>
+                  <Text style={{ color: theme.textPrimary }}>
+                    {formData.birthDate.toLocaleDateString()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {showDatePicker && (
+              <DateTimePicker
+                maximumDate={minDate}
+                minimumDate={maxDate}
+                value={formData.birthDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(false);
+                  if (event.type === 'set' && selectedDate) {
+                    updateField('birthDate', selectedDate);
+                  }
+                }}
+              />
+            )}
+
+            <View>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Tipo de ingreso</Text>
+              <View style={styles.grid}>
+                {[
+                  { value: IncomeType.SUELDO_FIJO, label: 'Sueldo fijo' },
+                  { value: IncomeType.INDEPENDIENTE, label: 'Sueldo variable' },
+                  { value: IncomeType.MIXTO, label: 'Sin ingresos' },
+                  { value: IncomeType.OTRO, label: 'Otro' },
+                ].map(({ value, label }) => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[gridOptionStyle, formData.incomeType === value && gridActiveStyle]}
+                    onPress={() => updateField('incomeType', value)}
+                  >
+                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Ingreso mensual (CLP)</Text>
+              <TextInput
+                ref={incomeAmountRef}
+                style={[inputStyle, errors.incomeAmount && inputErrorStyle]}
+                placeholder="Ej: 800000"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="numeric"
+                value={formData.incomeAmount}
+                onChangeText={(text) => updateField('incomeAmount', text.replace(/[^0-9]/g, ''))}
+                onBlur={() => validateField('incomeAmount', formData.incomeAmount)}
+                onSubmitEditing={() => spentAmountRef.current?.focus()}
+                returnKeyType="next"
+              />
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Gastos mensuales estimados (CLP)</Text>
+              <TextInput
+                ref={spentAmountRef}
+                style={[inputStyle, errors.spentAmount && inputErrorStyle]}
+                placeholder="Ej: 500000"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="numeric"
+                value={formData.spentAmount}
+                onChangeText={(text) => updateField('spentAmount', text.replace(/[^0-9]/g, ''))}
+                onBlur={() => validateField('spentAmount', formData.spentAmount)}
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+        );
+
+      case 3:
+        return (
+          <View>
+            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
+              Selecciona todos los que aplican. Mínimo 1.
+            </Text>
+            <View style={styles.grid}>
+              {Object.values(EconomicCategory).map((category) => {
+                const info = EconomicCategoryInfo[category];
+                const isActive = formData.economicCategories.includes(category);
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[gridOptionStyle, isActive && gridActiveStyle]}
+                    onPress={() => toggleCategory(category)}
+                  >
+                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>{info.name}</Text>
+                    <Text style={[styles.gridSubText, { color: theme.textSecondary }]}>{info.description}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        );
+
+      default:
+        return null;
+    }
   };
+
+  const firstError = getFirstError();
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
+      {/* Barra superior */}
+      <View style={styles.topNavbar}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={[styles.backButton, { backgroundColor: theme.tabIconDefault }]}
+        >
+          <Ionicons name="arrow-back" size={32} color={theme.textPrimary} />
+        </TouchableOpacity>
+
+        <View style={styles.progressBar}>
+          <View style={styles.stepsContainer}>
+            {/* Paso 1 */}
+            <View style={[styles.progressStep, { borderColor: step >= 1 ? theme.greenPrimary : theme.border }, step > 1 && { backgroundColor: theme.greenPrimary }]}>
+              {step > 1
+                ? <Ionicons name="checkmark" size={32} color={'#ffffff'} />
+                : <Feather name="user" size={28} color={theme.greenPrimary} />}
+            </View>
+            {/* Paso 2 */}
+            <View style={[styles.progressStep, { borderColor: step >= 2 ? theme.greenPrimary : theme.border }, step > 2 && { backgroundColor: theme.greenPrimary }]}>
+              {step > 2
+                ? <Ionicons name="checkmark" size={32} color={'#ffffff'} />
+                : <MaterialIcons name="attach-money" size={32} color={step >= 2 ? theme.greenPrimary : theme.textSecondary} />}
+            </View>
+            {/* Paso 3 */}
+            <View style={[styles.progressStep, { borderColor: step >= 3 ? theme.greenPrimary : theme.border }]}>
+              <Ionicons name="newspaper-outline" size={28} color={step >= 3 ? theme.greenPrimary : theme.textSecondary} />
+            </View>
+          </View>
+
+          {/* Barra de progreso */}
+          <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+            <View style={[styles.progressFill, { backgroundColor: theme.greenPrimary, width: step === 1 ? '5%' : step === 2 ? '50%' : '100%' }]} />
+          </View>
+        </View>
+      </View>
+
+      {/* Contenido scrolleable */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={true}
       >
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={[styles.appName, { color: theme.textPrimary }]}>
-            ChauchApp
+        <View>
+          <Text style={[styles.position, { color: theme.greenPrimary }]}>Paso {step} de 3</Text>
+          <Text style={[styles.title, { color: theme.textPrimary }]}>
+            {step === 1 && 'Crea tu cuenta'}
+            {step === 2 && 'Tu situación financiera'}
+            {step === 3 && '¿Qué noticias te interesan?'}
           </Text>
-          <Text style={[styles.appSubtitle, { color: theme.textSecondary }]}>
-            Tu asistente financiero personal
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            {step === 1 && 'Datos básicos para acceder a la app.'}
+            {step === 2 && 'La IA usa esto para personalizar tus reportes.'}
+            {step === 3 && 'Recibirás noticias relevantes según tus intereses.'}
           </Text>
         </View>
 
-        {/* Form Card */}
         <View style={[styles.formCard, { backgroundColor: theme.cardBg }]}>
-          <Text style={[styles.formTitle, { color: theme.textPrimary }]}>
-            Crear cuenta
-          </Text>
-          <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
-            Únete gratis a ChauchApp
-          </Text>
-
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
-              Correo electrónico
-            </Text>
-            <TextInput
-              style={[
-                  // Eliminado por el usuario el 2026-04-25
-                {
-                  backgroundColor: theme.background,
-                  color: theme.textPrimary,
-                  borderColor: theme.border,
-                },
-              ]}
-              placeholder="tuemail@ejemplo.com"
-              placeholderTextColor={theme.textSecondary}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
-              Contraseña
-            </Text>
-            <View
-              style={[
-                styles.passwordContainer,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <TextInput
-                style={[
-                  styles.passwordInput,
-                  {
-                    color: theme.textPrimary,
-                  },
-                ]}
-                placeholder="Tu contraseña"
-                placeholderTextColor={theme.textSecondary}
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Text style={{ color: theme.icon }}>
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </Text>
-              </TouchableOpacity>
+          {firstError !== '' && (
+            <View style={[styles.errorBanner, { backgroundColor: '#ff000010' }]}>
+              <Ionicons name="alert-circle-outline" size={24} color={'#ff0000'} />
+              <Text style={[styles.errorText, { color: '#ff0000' }]}>{firstError}</Text>
             </View>
-          </View>
-
-          {/* Confirm Password Input */}
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>
-              Confirmar contraseña
-            </Text>
-            <View
-              style={[
-                styles.passwordContainer,
-                {
-                  backgroundColor: theme.background,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <TextInput
-                style={[
-                  styles.passwordInput,
-                  {
-                    color: theme.textPrimary,
-                  },
-                ]}
-                placeholder="Confirma tu contraseña"
-                placeholderTextColor={theme.textSecondary}
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <Text style={{ color: theme.icon }}>
-                  {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Register Button */}
-          <TouchableOpacity
-            style={[styles.registerButton, { backgroundColor: theme.greenPrimary }]}
-            onPress={handleRegister}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.registerButtonText}>Crear cuenta</Text>
-          </TouchableOpacity>
-
-          {/* Back to Login Link */}
-          <View style={styles.loginContainer}>
-            <Text style={[styles.loginText, { color: theme.textSecondary }]}>
-              ¿Ya tienes cuenta?{' '}
-            </Text>
-            <TouchableOpacity onPress={handleBackToLogin}>
-              <Text style={[styles.loginLink, { color: theme.greenPrimary }]}>
-                Inicia sesión
-              </Text>
-            </TouchableOpacity>
-          </View>
+          )}
+          {renderStep()}
         </View>
       </ScrollView>
+
+      {/* Barra inferior */}
+      <View style={[styles.footer, { backgroundColor: theme.cardBg, borderColor: theme.border }]}>
+        <TouchableOpacity
+          style={[styles.navButton, { backgroundColor: theme.greenPrimary }]}
+          onPress={step < 3 ? handleNext : handleRegister}
+        >
+          <Text style={styles.navButtonText}>{step < 3 ? 'Siguiente' : 'Crear cuenta'}</Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -184,106 +516,191 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 50,
+    paddingBottom: 20,
+    justifyContent: 'space-between',
+  },
+
+  topNavbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+    marginBottom: 30,
+    paddingHorizontal: 16,
+  },
+
+  backButton: {
+    borderRadius: 100,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
     justifyContent: 'center',
   },
+
+  progressBar: {
+    flex: 1,
+    gap: 12,
+    alignItems: 'center',
+  },
+
+  stepsContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+
+  progressStep: {
+    width: 45,
+    height: 45,
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+
+  progressTrack: {
+    height: 4,
+    width: '90%',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 32,
+    padding: 16,
+    paddingBottom: 100,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
+
+  position: {
+    fontWeight: '800',
+    fontSize: 20,
   },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 16,
-  },
-  appName: {
-    fontSize: 28,
+
+  title: {
+    fontSize: 32,
     fontWeight: '700',
     marginBottom: 8,
   },
-  appSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
+
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
   },
+
   formCard: {
     borderRadius: 16,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
+
+  errorBanner: {
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  formSubtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 24,
+
+  errorText: {
+    flex: 1,
   },
+
+  mainContainer: {
+    gap: 10,
+  },
+
+  fieldContainer: {
+    gap: 4,
+  },
+
+  fullnameContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+
   inputContainer: {
-    marginBottom: 20,
+    flex: 1,
+    gap: 4,
   },
+
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 4,
   },
+
   input: {
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
+    height: 48,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
   },
+
   passwordContainer: {
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
   },
+
   passwordInput: {
     flex: 1,
-    fontSize: 14,
+    height: '100%',
+    paddingVertical: 0,
   },
-  eyeIcon: {
-    padding: 8,
-  },
-  registerButton: {
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 20,
-  },
-  registerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  loginContainer: {
+
+  grid: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 8,
+  },
+
+  gridOption: {
+    width: '48%',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
   },
-  loginText: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  loginLink: {
-    fontSize: 14,
+
+  gridText: {
     fontWeight: '600',
-    textDecorationLine: 'underline',
+    textAlign: 'center',
+  },
+
+  gridSubText: {
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  footer: {
+    borderTopWidth: 1,
+    height: 80,
+    padding: 16,
+  },
+
+  navButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  navButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 });
