@@ -1,8 +1,24 @@
 import { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
+import SimpleLineIcons from '@expo/vector-icons/SimpleLineIcons';
+import Feather from '@expo/vector-icons/Feather';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
+const LOGIN_COLORS = {
+  background: '#07080f',
+  cardBackground: '#10151a',
+  cardBorder: '#0b261e',
+  textPrimary: '#e5eaf0',
+  textSecondary: '#6d6c7d',
+  inputBackground: '#14171e',
+  inputBorder: '#191d23',
+  inputText: '#a3aabd',
+  buttonBackground: '#01a552',
+  buttonText: '#081a10',
+  error: '#db2629',
+  registerLink: '#01a552',
+};
 
 
 export default function LoginScreen() {
@@ -15,12 +31,10 @@ export default function LoginScreen() {
   const [errorEmail, setErrorEmail] = useState('');
   const [errorPassword, setErrorPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
   // Validación de email
   const validateEmail = (value: string) => {
-    if (!value) return 'El correo es obligatorio';
+    if (!value) return '';
     // Regex simple para email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) return 'Correo electrónico inválido';
@@ -29,14 +43,9 @@ export default function LoginScreen() {
 
   // Validación de contraseña
   const validatePassword = (value: string) => {
-    if (!value) return 'La contraseña es obligatoria';
+    if (!value) return '';
     return '';
   };
-
-
-  // El botón siempre está habilitado, pero muestra errores si hay
-  const isFormValid = !validateEmail(email) && !validatePassword(password);
-
 
 
   const handleLogin = async () => {
@@ -47,6 +56,12 @@ export default function LoginScreen() {
     const passErr = validatePassword(password);
     setErrorEmail(emailErr);
     setErrorPassword(passErr);
+    
+    if (!email || !password) {
+      setLoginError('Error al iniciar sesión');
+      return;
+    }
+    
     if (emailErr || passErr) return;
 
     try {
@@ -63,10 +78,10 @@ export default function LoginScreen() {
         localStorage.setItem('token', data.access_token);
         router.replace('/(tabs)');
       } else {
-        setLoginError(data.message || 'Error al iniciar sesión');
+        setLoginError('Error al iniciar sesión');
       }
-    } catch (error) {
-      setLoginError('No se pudo conectar con el servidor');
+    } catch {
+      setLoginError('Error al iniciar sesión');
     }
   };
 
@@ -77,7 +92,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[styles.container, { backgroundColor: LOGIN_COLORS.background }]}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -90,37 +105,57 @@ export default function LoginScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={[styles.appName, { color: theme.textPrimary }]}>
+          <Text style={[styles.appName, { color: LOGIN_COLORS.textPrimary }]}>
             ChauchApp
           </Text>
-          <Text style={[styles.appSubtitle, { color: theme.textSecondary }]}>
+          <Text style={[styles.appSubtitle, { color: LOGIN_COLORS.textSecondary }]}>
             Tu asistente financiero personal
           </Text>
         </View>
 
         {/* Form Card */}
-        <View style={[styles.formCard, { backgroundColor: theme.cardBg }]}>
-          <Text style={[styles.formTitle, { color: theme.textPrimary }]}>
+        <View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: LOGIN_COLORS.cardBackground,
+              borderColor: LOGIN_COLORS.cardBorder,
+            },
+          ]}
+        >
+          <Text style={[styles.formTitle, { color: LOGIN_COLORS.textPrimary }]}>
             Iniciar sesión
           </Text>
-          <Text style={[styles.formSubtitle, { color: theme.textSecondary }]}>
+          <Text style={[styles.formSubtitle, { color: LOGIN_COLORS.textSecondary }]}>
             Ingresa con tu cuenta para continuar
           </Text>
 
+          {/* Error Banner */}
+          {loginError ? (
+            <View style={[styles.errorBanner, { backgroundColor: LOGIN_COLORS.error + '20' }]}>
+              <View style={styles.errorBannerContent}>
+                <AntDesign name="exclamation-circle" color={LOGIN_COLORS.error} size={20} />
+                <Text style={[styles.errorBannerText, { color: LOGIN_COLORS.error }]}>
+                  {loginError}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {/* Email Input */}
           <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Correo electrónico</Text>
+            <Text style={[styles.inputLabel, { color: LOGIN_COLORS.textPrimary }]}>Correo electrónico</Text>
             <TextInput
               style={[
                 styles.input,
                 {
-                  backgroundColor: theme.background,
-                  color: theme.textPrimary,
-                  borderColor: errorEmail && emailTouched ? '#E53935' : theme.border,
+                  backgroundColor: LOGIN_COLORS.inputBackground,
+                  color: LOGIN_COLORS.inputText,
+                  borderColor: errorEmail && emailTouched ? LOGIN_COLORS.error : LOGIN_COLORS.inputBorder,
                 },
               ]}
               placeholder="tuemail@ejemplo.com"
-              placeholderTextColor={theme.textSecondary}
+              placeholderTextColor={LOGIN_COLORS.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -133,20 +168,17 @@ export default function LoginScreen() {
                 setErrorEmail(validateEmail(email));
               }}
             />
-            {errorEmail && emailTouched ? (
-              <Text style={styles.errorText}>{errorEmail}</Text>
-            ) : null}
           </View>
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Contraseña</Text>
+            <Text style={[styles.inputLabel, { color: LOGIN_COLORS.textPrimary }]}>Contraseña</Text>
             <View
               style={[
                 styles.passwordContainer,
                 {
-                  backgroundColor: theme.background,
-                  borderColor: errorPassword && passwordTouched ? '#E53935' : theme.border,
+                  backgroundColor: LOGIN_COLORS.inputBackground,
+                  borderColor: errorPassword && passwordTouched ? LOGIN_COLORS.error : LOGIN_COLORS.inputBorder,
                 },
               ]}
             >
@@ -154,11 +186,11 @@ export default function LoginScreen() {
                 style={[
                   styles.passwordInput,
                   {
-                    color: theme.textPrimary,
+                    color: LOGIN_COLORS.inputText,
                   },
                 ]}
                 placeholder="Tu contraseña"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor={LOGIN_COLORS.textSecondary}
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={text => {
@@ -174,42 +206,35 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <Text style={{ color: theme.icon }}>
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </Text>
+                {showPassword ? (
+                  <SimpleLineIcons name="eye" color={LOGIN_COLORS.textSecondary} size={20} />
+                ) : (
+                  <Feather name="eye-off" color={LOGIN_COLORS.textSecondary} size={20} />
+                )}
               </TouchableOpacity>
             </View>
-            {errorPassword && passwordTouched ? (
-              <Text style={styles.errorText}>{errorPassword}</Text>
-            ) : null}
           </View>
-
-
-          {/* Error de login */}
-          {loginError ? (
-            <Text style={styles.errorText}>{loginError}</Text>
-          ) : null}
 
           {/* Login Button */}
           <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: theme.greenPrimary }]}
+            style={[styles.loginButton, { backgroundColor: LOGIN_COLORS.buttonBackground }]}
             onPress={handleLogin}
             activeOpacity={0.8}
           >
             <Text style={styles.loginButtonText}>Iniciar sesión</Text>
           </TouchableOpacity>
+        </View>
 
-          {/* Register Link */}
-          <View style={styles.registerContainer}>
-            <Text style={[styles.registerText, { color: theme.textSecondary }]}>
-              ¿No tienes cuenta?{' '}
+        {/* Register Link */}
+        <View style={styles.registerContainer}>
+          <Text style={[styles.registerText, { color: LOGIN_COLORS.textSecondary }]}>
+            ¿No tienes cuenta?{' '}
+          </Text>
+          <TouchableOpacity onPress={handleRegister}>
+            <Text style={[styles.registerLink, { color: LOGIN_COLORS.registerLink }]}>
+              Registrate gratis
             </Text>
-            <TouchableOpacity onPress={handleRegister}>
-              <Text style={[styles.registerLink, { color: theme.greenPrimary }]}>
-                Registrate gratis
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -234,6 +259,10 @@ const styles = StyleSheet.create({
   logo: {
     width: 80,
     height: 80,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: LOGIN_COLORS.inputBorder,
     marginBottom: 16,
   },
   appName: {
@@ -247,6 +276,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     borderRadius: 16,
+    borderWidth: 1,
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -278,12 +308,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 14,
+    height: 48,
   },
   passwordContainer: {
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -302,7 +334,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loginButtonText: {
-    color: '#FFFFFF',
+    color: LOGIN_COLORS.buttonText,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -322,9 +354,26 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   errorText: {
-    color: '#E53935',
+    color: LOGIN_COLORS.error,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 2,
+  },
+  errorBanner: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: LOGIN_COLORS.error,
+  },
+  errorBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  errorBannerText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
