@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   TextInput,
@@ -13,13 +13,33 @@ import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import React from 'react';
-import { IncomeType } from './constants/incomeType';
-import { EconomicCategory, EconomicCategoryInfo } from './constants/economicsCategories';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
+const fetchIncomeTypes = async () => {
+  const res = await fetch(`${API_BASE_URL}/transactions/income-types`);
+
+  if (!res.ok) {
+    throw new Error("Error al obtener tipos de ingreso");
+  }
+
+  return res.json();
+};
+
+const fetchNewsTopics= async () => {
+  const res = await fetch(`${API_BASE_URL}/news/topics`);
+
+  if (!res.ok) {
+    throw new Error("Error al obtener categorias económicas");
+  }
+
+  return res.json();
+}
 
 type FormData = {
   nombre: string;
@@ -28,10 +48,10 @@ type FormData = {
   password: string;
   confirmPassword: string;
   birthDate: Date;
-  incomeType: IncomeType;
+  incomeType: string;
   incomeAmount: string;
   spentAmount: string;
-  economicCategories: EconomicCategory[];
+  economicCategories: string[];
 };
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
@@ -54,6 +74,32 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const nameRegex = /^[\p{L}\s]+$/u;
 
 export default function RegisterScreen() {
+  const [incomeTypes, setIncomeTypes] = useState<any[]>([]);
+  const [categoryMap, setCategoryMap] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const [incomeTypesData, categoriesData] = await Promise.all([
+          fetchIncomeTypes(),
+          fetchNewsTopics(),
+        ]);
+
+        setIncomeTypes(incomeTypesData);
+
+        const map: Record<string, any> = {};
+        categoriesData.forEach((cat: any) => {
+          map[cat.name] = cat;
+        });
+
+        setCategoryMap(map);
+      } catch (err) {
+        console.error("Error cargando datos iniciales", err);
+      }
+    };
+    loadInitialData();
+  }, []);
+
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
@@ -81,7 +127,7 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
     birthDate: minDate,
-    incomeType: IncomeType.SUELDO_FIJO,
+    incomeType: '',
     incomeAmount: '',
     spentAmount: '',
     economicCategories: [],
@@ -126,12 +172,17 @@ export default function RegisterScreen() {
         else if (value !== formData.password) error = 'Las contraseñas deben coincidir';
         break;
       case 'incomeAmount':
+        const incomeNum = Number(value);
         if (!value.trim()) error = 'El ingreso es obligatorio';
-        else if (isNaN(Number(value))) error = 'Debe ser un número válido';
+        else if (isNaN(incomeNum)) error = 'Debe ser un número válido';
+        else if (incomeNum <= 0) error = 'El ingreso debe ser mayor a 0';
+        else if (incomeNum <= 5000) error = 'El ingreso no puede ser tan bajo';
         break;
       case 'spentAmount':
+        const spentNum = Number(value);
         if (!value.trim()) error = 'Los gastos son obligatorios';
-        else if (isNaN(Number(value))) error = 'Debe ser un número válido';
+        else if (isNaN(spentNum)) error = 'Debe ser un número válido';
+        else if (spentNum < 0) error = 'Los gastos no pueden ser negativos';
         break;
       case 'economicCategories':
         if (value.length === 0) error = 'Selecciona al menos una categoría';
@@ -163,14 +214,14 @@ export default function RegisterScreen() {
     }
   };
 
-  const toggleCategory = (category: EconomicCategory) => {
+  const toggleCategory = (categoryId: string) => {
     setFormData((prev) => {
-      const exists = prev.economicCategories.includes(category);
+      const exists = prev.economicCategories.includes(categoryId);
       return {
         ...prev,
         economicCategories: exists
-          ? prev.economicCategories.filter((c) => c !== category)
-          : [...prev.economicCategories, category],
+          ? prev.economicCategories.filter((c) => c !== categoryId)
+          : [...prev.economicCategories, categoryId],
       };
     });
   };
@@ -186,12 +237,110 @@ export default function RegisterScreen() {
     setStep((s) => s - 1);
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (hasAnyErrors()) return;
+
     const income = parseInt(formData.incomeAmount, 10);
-    if (isNaN(income)) return;
-    router.replace('/(tabs)');
+    const expenses = parseInt(formData.spentAmount, 10);
+
+    if (isNaN(income) || isNaN(expenses)) return;
+
+    try {
+      const payload = {
+        first_name: formData.nombre,
+        last_name: formData.apellido,
+        email: formData.email,
+        password: formData.password,
+        birth_date: formData.birthDate.toISOString().split("T")[0],
+        income_type: formData.incomeType,
+        monthly_income: income,
+        monthly_expenses: expenses,
+        topics: formData.economicCategories,
+      };
+
+      console.log("Payload send:", JSON.stringify(payload, null, 2));
+
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Error, response:", data);
+
+        let message = "Error en registro";
+
+        if (Array.isArray(data.detail)) {
+          message = data.detail
+          .map((err: any) => `${err.loc?.join(".")}: ${err.msg}`)
+          .join("\n");
+        } else if (typeof data.detail === "string") {
+          message = data.detail;
+        } else if (typeof data === "object") {
+          message = JSON.stringify(data, null, 2);
+        }
+        throw new Error(message);
+      }
+
+      console.log("Successful registration:", data);
+
+      handleLogin();
+
+      router.replace('/(tabs)');
+
+    } catch (err: any) {
+      console.error("Register error:", err.message || err);
+
+      alert(err.message || "Unknown error during registration");
+    }
   };
+
+  const [loginError, setLoginError] = useState<string>('');
+
+  const handleLogin = async () => {
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        let message = 'Error al iniciar sesión';
+        if (Array.isArray(data.detail)) {
+          message = data.detail
+            .map((err: any) => `${err.loc?.join('.')}: ${err.msg}`)
+            .join('\n');
+        } else if (typeof data.detail === 'string') {
+          message = data.detail;
+        } else if (typeof data === 'object') {
+          message = JSON.stringify(data, null, 2);
+        }
+        throw new Error(message);
+      }
+    // TODO: almacenar data.access_token y data.refresh_token
+      console.log('Successful login:', data);
+      router.replace('/(tabs)');
+
+    } catch (err: any) {
+      console.error('Login error:', err.message || err);
+      setLoginError(err.message || 'No se pudo conectar con el servidor');
+    }
+};
 
   /* ─── Estilos dinámicos derivados del tema ─── */
 
@@ -346,18 +495,17 @@ export default function RegisterScreen() {
             <View>
               <Text style={[styles.inputLabel, { color: theme.textPrimary }]}>Tipo de ingreso</Text>
               <View style={styles.grid}>
-                {[
-                  { value: IncomeType.SUELDO_FIJO, label: 'Sueldo fijo' },
-                  { value: IncomeType.INDEPENDIENTE, label: 'Sueldo variable' },
-                  { value: IncomeType.MIXTO, label: 'Sin ingresos' },
-                  { value: IncomeType.OTRO, label: 'Otro' },
-                ].map(({ value, label }) => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[gridOptionStyle, formData.incomeType === value && gridActiveStyle]}
-                    onPress={() => updateField('incomeType', value)}
+                {incomeTypes.map((type) => (
+                  <TouchableOpacity key={type.id}
+                    style={[
+                      gridOptionStyle,
+                      formData.incomeType === type.id && gridActiveStyle,
+                    ]}
+                    onPress={() => updateField('incomeType', type.id)}
                   >
-                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>{label}</Text>
+                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>
+                      {type.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -403,17 +551,21 @@ export default function RegisterScreen() {
               Selecciona todos los que aplican. Mínimo 1.
             </Text>
             <View style={styles.grid}>
-              {Object.values(EconomicCategory).map((category) => {
-                const info = EconomicCategoryInfo[category];
-                const isActive = formData.economicCategories.includes(category);
+              {Object.values(categoryMap).map((category: any) => {
+                const isActive = formData.economicCategories.includes(category.id);
+
                 return (
                   <TouchableOpacity
-                    key={category}
+                    key={category.id}
                     style={[gridOptionStyle, isActive && gridActiveStyle]}
-                    onPress={() => toggleCategory(category)}
+                    onPress={() => toggleCategory(category.id)}
                   >
-                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>{info.name}</Text>
-                    <Text style={[styles.gridSubText, { color: theme.textSecondary }]}>{info.description}</Text>
+                    <Text style={[styles.gridText, { color: theme.textPrimary }]}>
+                      {category.name}
+                    </Text>
+                    <Text style={[styles.gridSubText, { color: theme.textSecondary }]}>
+                      {category.description}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}
