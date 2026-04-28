@@ -24,6 +24,7 @@ export const APP_THEME = {
     primary: {
       background: "#00a452",
       text: "#020803",
+      textTransparent: "#02080320",
     },
   },
 
@@ -43,12 +44,42 @@ export const APP_THEME = {
       accent: "#00a452",
     },
     tip: {
-      background: "#1f140d",
-      border: "#4a2a1a",
+      background: "#1A110B",
+      border: "#3F2113",
       text: "#eceff2",
-      accent: "#F97316",
+      accent: "#E97D21",
+    },
+    income: {
+      background: "#081B13",
+      border: "#0A331D",
+      text: "#00C853",
+    },
+    expense: {
+      background: "#1F0A0E",
+      border: "#3D1318",
+      text: "#FF453A",
+    },
+    balance: {
+      background: "#0F1C2E",
+      border: "#295D99",
+      tagBg: "#113255",
+      tagText: "#3CA5FF",
+      iconBg: "#3CA5FF",
     },
   },
+
+  components: {
+    tabs: {
+      activeBg: "#3CA5FF",
+      activeText: "#06090f",
+      inactiveBg: "#1D232C",
+      inactiveText: "#8c8f95",
+    },
+    badge: {
+      background: "#ee343b",
+      text: "#FFFFFF",
+    }
+  }
 };
 
 export const Typography = {
