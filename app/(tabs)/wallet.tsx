@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
+import PersonalSummaryChart from '@/components/cartola/PersonalSummaryChart';
+import MonthAccordion from '@/components/cartola/MonthAccordion';
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
@@ -108,6 +110,9 @@ export default function CartolaScreen() {
             </Text>
           </View>
         </View>
+
+        <PersonalSummaryChart />
+        <MonthAccordion />
 
       </ScrollView>
     </SafeAreaView>
