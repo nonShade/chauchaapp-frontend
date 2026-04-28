@@ -95,6 +95,20 @@ export default function CartolaScreen() {
             <Ionicons name="wallet-outline" size={28} color={APP_THEME.components.tabs.activeText} />
           </View>
         </View>
+
+        {/* Tarjeta de Recomendación de Ahorro */}
+        <View style={[styles.tipCard, { backgroundColor: APP_THEME.cards.tip.background, borderColor: APP_THEME.cards.tip.border }]}>
+          <View style={styles.tipIconContainer}>
+            <Ionicons name="bulb-outline" size={20} color={APP_THEME.cards.tip.accent} />
+          </View>
+          <View style={styles.tipTextContainer}>
+            <Text style={styles.tipTitle}>Recomendacion de ahorro</Text>
+            <Text style={styles.tipDescription}>
+              Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>$795.000</Text> este mes (20% de tus ingresos).
+            </Text>
+          </View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
