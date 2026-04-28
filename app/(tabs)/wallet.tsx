@@ -5,6 +5,7 @@ import { APP_THEME } from '@/constants/themes';
 import PersonalSummaryChart from '@/components/cartola/PersonalSummaryChart';
 import MonthAccordion from '@/components/cartola/MonthAccordion';
 import PersonalTotals from '@/components/cartola/PersonalTotals';
+import CategoryExpenses from '@/components/cartola/CategoryExpenses';
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
@@ -115,6 +116,7 @@ export default function CartolaScreen() {
         <PersonalSummaryChart />
         <MonthAccordion />
         <PersonalTotals />
+        <CategoryExpenses />
 
       </ScrollView>
     </SafeAreaView>
