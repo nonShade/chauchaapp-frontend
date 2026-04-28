@@ -88,7 +88,7 @@ export default function HomeScreen() {
               <View
                 style={[
                   styles.iconBg,
-                  { backgroundColor: APP_THEME.button.primary.text + "20" },
+                  { backgroundColor: APP_THEME.button.primary.textTransparent },
                 ]}
               >
                 <Ionicons
@@ -120,7 +120,7 @@ export default function HomeScreen() {
               <View
                 style={[
                   styles.iconBg,
-                  { backgroundColor: APP_THEME.button.primary.text + "20" },
+                  { backgroundColor: APP_THEME.button.primary.textTransparent },
                 ]}
               >
                 <Ionicons
@@ -154,7 +154,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               style={[
                 styles.button,
-                { backgroundColor: APP_THEME.button.primary.text + "20" },
+                { backgroundColor: APP_THEME.button.primary.textTransparent },
               ]}
               onPress={() => router.push("/(tabs)/wallet" as any)}
             >

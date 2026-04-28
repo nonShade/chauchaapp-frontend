@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { APP_THEME } from "@/constants/themes";
@@ -20,8 +20,12 @@ export default function Header({ userName = "Usuario" }) {
         style={styles.profileSection}
         onPress={() => router.push("/profile")}
       >
-        <View style={[styles.avatar, { backgroundColor: APP_THEME.button.primary.background }]}>
-          <Text style={[styles.avatarText, { color: APP_THEME.button.primary.text }]}>{initials}</Text>
+        <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+          <Image 
+            source={require("@/assets/images/logo-chauchapp.png")} 
+            style={{ width: 36, height: 36, borderRadius: 8 }}
+            resizeMode="contain"
+          />
         </View>
         <View style={styles.textBlock}>
           <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>{getGreeting()}</Text>
@@ -35,6 +39,9 @@ export default function Header({ userName = "Usuario" }) {
           size={24}
           color={APP_THEME.text.primary}
         />
+        <View style={[styles.badge, { backgroundColor: APP_THEME.components.badge.background }]}>
+          <Text style={[styles.badgeText, { color: APP_THEME.components.badge.text }]}>4</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -46,7 +53,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     marginTop: 12,
-    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_THEME.card.border,
   },
   profileSection: {
     flexDirection: "row",
@@ -77,5 +86,20 @@ const styles = StyleSheet.create({
   },
   notificationBtn: {
     padding: 4,
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
