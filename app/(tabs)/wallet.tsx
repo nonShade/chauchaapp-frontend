@@ -62,6 +62,39 @@ export default function CartolaScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Tarjetas de Ingresos y Gastos */}
+        <View style={styles.summaryRow}>
+          <View style={[styles.summaryCard, { backgroundColor: APP_THEME.cards.income.background, borderColor: APP_THEME.cards.income.border }]}>
+            <View style={styles.summaryHeader}>
+              <Ionicons name="trending-up" size={16} color={APP_THEME.cards.income.text} />
+              <Text style={[styles.summaryTitle, { color: APP_THEME.cards.income.text }]}>Ingresos</Text>
+            </View>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.text }]}>$3.975.000</Text>
+          </View>
+
+          <View style={[styles.summaryCard, { backgroundColor: APP_THEME.cards.expense.background, borderColor: APP_THEME.cards.expense.border }]}>
+            <View style={styles.summaryHeader}>
+              <Ionicons name="trending-down" size={16} color={APP_THEME.cards.expense.text} />
+              <Text style={[styles.summaryTitle, { color: APP_THEME.cards.expense.text }]}>Gastos</Text>
+            </View>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.text }]}>$3.402.000</Text>
+          </View>
+        </View>
+
+        {/* Tarjeta de Balance Disponible */}
+        <View style={[styles.balanceCard, { backgroundColor: APP_THEME.cards.balance.background, borderColor: APP_THEME.cards.balance.border }]}>
+          <View style={styles.balanceContent}>
+            <View style={styles.balanceTag}>
+              <Ionicons name="person-outline" size={12} color={APP_THEME.cards.balance.tagText} />
+              <Text style={styles.balanceTagText}>Personal</Text>
+            </View>
+            <Text style={styles.balanceAmount}>$573.000</Text>
+            <Text style={styles.balanceSubtitle}>Balance disponible</Text>
+          </View>
+          <View style={[styles.walletIconContainer, { backgroundColor: APP_THEME.cards.balance.iconBg }]}>
+            <Ionicons name="wallet-outline" size={28} color={APP_THEME.components.tabs.activeText} />
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -142,5 +175,102 @@ const styles = StyleSheet.create({
   toggleText: {
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  summaryCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  summaryAmount: {
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  balanceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 20,
+  },
+  balanceContent: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  balanceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: APP_THEME.cards.balance.tagBg,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginBottom: 12,
+    gap: 4,
+  },
+  balanceTagText: {
+    color: APP_THEME.cards.balance.tagText,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  balanceAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: APP_THEME.text.primary,
+    marginBottom: 4,
+  },
+  balanceSubtitle: {
+    fontSize: 14,
+    color: APP_THEME.text.secondary,
+  },
+  walletIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipCard: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 16,
+  },
+  tipIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3F2113',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tipTextContainer: {
+    flex: 1,
+  },
+  tipTitle: {
+    color: APP_THEME.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 6,
+  },
+  tipDescription: {
+    color: APP_THEME.text.secondary,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
