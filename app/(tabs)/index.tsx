@@ -10,13 +10,16 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { APP_THEME } from "@/constants/themes";
+import { useAuth } from "@/contexts/AuthContext";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
+import { useEffect } from "react";
 
 const formatCLP = (amount: number) => `$${amount.toLocaleString("es-CL")}`;
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { accessToken } = useAuth();
   const [showBalance, setShowBalance] = useState(true);
 
   const balance = 573000;
@@ -28,6 +31,20 @@ export default function HomeScreen() {
       "Los mercados reaccionan positivamente a las noticias desde Asia, impulsando el precio.",
     affectsLabel: "Impacto Positivo",
   };
+
+  // Usar el access token para llamadas a la API
+  useEffect(() => {
+    if (accessToken) {
+      console.log("Token disponible en home:", accessToken);
+      // Aquí puedes hacer llamadas a la API con el token
+      // Ejemplo:
+      // fetch("http://localhost:8000/v1/user/data", {
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //   },
+      // })
+    }
+  }, [accessToken]);
 
   return (
     <SafeAreaView

@@ -15,6 +15,7 @@ import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { APP_THEME } from "@/constants/themes";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LOGIN_COLORS = {
   background: APP_THEME.background.primary,
@@ -33,6 +34,7 @@ const LOGIN_COLORS = {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { setAccessToken } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -84,7 +86,7 @@ export default function LoginScreen() {
 
       const data = await response.json();
       if (response.ok && data.access_token) {
-        localStorage.setItem("token", data.access_token);
+        setAccessToken(data.access_token);
         router.replace("/(tabs)");
       } else {
         setLoginError("Error al iniciar sesión");
