@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
 import PersonalSummaryChart from '@/components/cartola/PersonalSummaryChart';
@@ -7,9 +7,30 @@ import MonthAccordion from '@/components/cartola/MonthAccordion';
 import PersonalTotals from '@/components/cartola/PersonalTotals';
 import CategoryExpenses from '@/components/cartola/CategoryExpenses';
 import RecentTransactions from '@/components/cartola/RecentTransactions';
+import { useCartolaData } from '@/hooks/useCartolaData';
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
+  const { isLoading, error, summary, transactions, incomeVsExpenses, distribution } = useCartolaData();
+  const income = summary?.total_income || 0;
+  const expense = summary?.total_expenses || 0;
+  const balance = summary?.total_balance || 0;
+  const savings = income * 0.2;
+
+  console.log('[DEBUG-WALLET] transactions raw:', JSON.stringify(transactions).substring(0, 500));
+  const transactionsList = Array.isArray(transactions)
+    ? transactions
+    : (transactions as any)?.data || [];
+  console.log('[DEBUG-WALLET] Nombres de transacciones:', transactionsList.map((t: any) => t.description || 'Sin desc'));
+  console.log('[DEBUG-WALLET] transactionsList length:', transactionsList.length);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -74,7 +95,9 @@ export default function CartolaScreen() {
               <Ionicons name="trending-up" size={16} color={APP_THEME.cards.income.text} />
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.income.text }]}>Ingresos</Text>
             </View>
-            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.text }]}>$3.975.000</Text>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.text }]}>
+              {isLoading ? '...' : formatCurrency(income)}
+            </Text>
           </View>
 
           <View style={[styles.summaryCard, { backgroundColor: APP_THEME.cards.expense.background, borderColor: APP_THEME.cards.expense.border }]}>
@@ -82,7 +105,9 @@ export default function CartolaScreen() {
               <Ionicons name="trending-down" size={16} color={APP_THEME.cards.expense.text} />
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.expense.text }]}>Gastos</Text>
             </View>
-            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.text }]}>$3.402.000</Text>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.text }]}>
+              {isLoading ? '...' : formatCurrency(expense)}
+            </Text>
           </View>
         </View>
 
@@ -93,7 +118,7 @@ export default function CartolaScreen() {
               <Ionicons name="person-outline" size={12} color={APP_THEME.cards.balance.tagText} />
               <Text style={styles.balanceTagText}>Personal</Text>
             </View>
-            <Text style={styles.balanceAmount}>$573.000</Text>
+            <Text style={styles.balanceAmount}>{isLoading ? '...' : formatCurrency(balance)}</Text>
             <Text style={styles.balanceSubtitle}>Balance disponible</Text>
           </View>
           <View style={[styles.walletIconContainer, { backgroundColor: APP_THEME.cards.balance.iconBg }]}>
@@ -109,16 +134,28 @@ export default function CartolaScreen() {
           <View style={styles.tipTextContainer}>
             <Text style={styles.tipTitle}>Recomendacion de ahorro</Text>
             <Text style={styles.tipDescription}>
-              Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>$795.000</Text> este mes (20% de tus ingresos).
+              Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>{isLoading ? '...' : formatCurrency(savings)}</Text> este mes (20% de tus ingresos).
             </Text>
           </View>
         </View>
 
-        <PersonalSummaryChart />
-        <MonthAccordion />
-        <PersonalTotals />
-        <CategoryExpenses />
-        <RecentTransactions />
+        {error && (
+          <View style={{ padding: 16, backgroundColor: APP_THEME.status.alerts.errorBg, borderRadius: 8 }}>
+            <Text style={{ color: APP_THEME.status.alerts.errorText }}>{error}</Text>
+          </View>
+        )}
+
+        {isLoading ? (
+          <ActivityIndicator size="large" color={APP_THEME.cards.income.text} style={{ marginTop: 40 }} />
+        ) : (
+          <>
+            <PersonalSummaryChart data={incomeVsExpenses} />
+            <MonthAccordion transactions={transactionsList} summary={summary} />
+            <PersonalTotals summary={summary} />
+            <CategoryExpenses distribution={distribution} />
+            <RecentTransactions transactions={transactions} />
+          </>
+        )}
 
       </ScrollView>
     </SafeAreaView>
