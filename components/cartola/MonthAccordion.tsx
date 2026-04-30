@@ -112,7 +112,7 @@ export default function MonthAccordion({ transactions, summary }: MonthAccordion
                     <View style={[styles.miniSummaryCard, { backgroundColor: APP_THEME.cards.expense.background, borderColor: APP_THEME.cards.expense.border }]}>
                       <Text style={styles.miniSummaryLabel}>Gastos</Text>
                       <Text style={[styles.miniSummaryAmount, { color: APP_THEME.cards.expense.text }]}>
-                        {formatCurrency(month.details.expenseAmount)}
+                        {formatCurrency(-month.details.expenseAmount)}
                       </Text>
                     </View>
                   </View>

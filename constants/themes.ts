@@ -6,6 +6,7 @@ export const APP_THEME = {
   card: {
     background: "#10141b",
     border: "#252c38",
+    progressBg: "#0D1117",
   },
 
   text: {
@@ -30,6 +31,13 @@ export const APP_THEME = {
 
   status: {
     error: "#ee343b",
+    success: "#00C853",
+    alerts: {
+      errorBg: "#FFCCCC",
+      errorText: "#CC0000",
+      successBg: "#D4EDDA",
+      successText: "#155724",
+    }
   },
 
   semantic: {
@@ -66,6 +74,7 @@ export const APP_THEME = {
       tagText: "#3CA5FF",
       iconBg: "#3CA5FF",
     },
+    categories: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'],
   },
 
   components: {
