@@ -1,17 +1,47 @@
+import { useState, useEffect } from "react";
 import { View, Text, SafeAreaView } from "react-native";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from 'expo-secure-store';
 import { APP_THEME } from "@/constants/themes";
 import Header from "@/components/home/Header";
 
 export default function TabLayout() {
+  const [userName, setUserName] = useState("Usuario");
+
+  useEffect(() => {
+    async function loadUser() {
+      let userDataStr: string | null = null;
+      if (typeof localStorage !== 'undefined') {
+        userDataStr = localStorage.getItem('user');
+      }
+      if (!userDataStr) {
+        try {
+          userDataStr = await SecureStore.getItemAsync('user');
+        } catch (e) {
+        }
+      }
+      if (userDataStr) {
+        try {
+          const user = JSON.parse(userDataStr);
+          if (user.first_name) {
+            setUserName(user.first_name);
+          }
+        } catch (e) {
+          console.error('Error parseando datos de usuario:', e);
+        }
+      }
+    }
+    loadUser();
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         header: () => (
           <SafeAreaView style={{ backgroundColor: APP_THEME.card.background }}>
-            <Header userName="Usuario" />
+            <Header userName={userName} />
           </SafeAreaView>
         ),
         tabBarShowLabel: false,
