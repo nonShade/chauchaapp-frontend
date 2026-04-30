@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -13,18 +13,24 @@ import { APP_THEME } from "@/constants/themes";
 import { useAuth } from "@/contexts/AuthContext";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
-import { useEffect } from "react";
+import { getSummary } from "@/services/api/transactions";
 
-const formatCLP = (amount: number) => `$${amount.toLocaleString("es-CL")}`;
+const formatCLP = (amount: number) => {
+  const formatted = new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `$${formatted}`;
+};
 
 export default function HomeScreen() {
   const router = useRouter();
   const { accessToken } = useAuth();
   const [showBalance, setShowBalance] = useState(true);
+  const [balance, setBalance] = useState(0);
+  const [ingresos, setIngresos] = useState(0);
+  const [gastos, setGastos] = useState(0);
 
-  const balance = 573000;
-  const ingresos = 3975000;
-  const gastos = 3402000;
   const news = {
     title: "El cobre experimenta una leve alza",
     summary:
@@ -32,18 +38,23 @@ export default function HomeScreen() {
     affectsLabel: "Impacto Positivo",
   };
 
-  // Usar el access token para llamadas a la API
+  // Cargar datos del resumen desde el backend cuando el token esté disponible
   useEffect(() => {
-    if (accessToken) {
-      console.log("Token disponible en home:", accessToken);
-      // Aquí puedes hacer llamadas a la API con el token
-      // Ejemplo:
-      // fetch("http://localhost:8000/v1/user/data", {
-      //   headers: {
-      //     Authorization: `Bearer ${accessToken}`,
-      //   },
-      // })
+    if (!accessToken) return;
+
+    async function loadData() {
+      try {
+        const summary = await getSummary();
+        if (summary) {
+          setBalance(summary.total_balance || 0);
+          setIngresos(summary.total_income || 0);
+          setGastos(summary.total_expenses || 0);
+        }
+      } catch (error) {
+        console.error("Error al cargar resumen:", error);
+      }
     }
+    loadData();
   }, [accessToken]);
 
   return (

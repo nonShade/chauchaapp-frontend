@@ -1,127 +1,183 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Transaction } from '@/types/transaction';
+import { groupTransactionsByMonth } from '@/services/api/adapters';
 
-const MONTHS = [
-  {
-    id: 1,
-    name: 'Marzo 2026',
-    amount: '$-775.000',
-    isPositive: false,
-    details: {
-      incomeAmount: '$1.000.000',
-      expenseAmount: '$847.000',
-      incomes: [
-        { id: 101, name: 'Sueldo', date: '28-02-2026', amount: '+$850.000' },
-        { id: 102, name: 'Bonificación', date: '14-02-2026', amount: '+$150.000' }
-      ],
-      expenses: [
-        { id: 201, name: 'Arriendo', date: '04-02-2026', amount: '-$350.000' },
-        { id: 202, name: 'Servicios', date: '09-02-2026', amount: '-$52.000' },
-      ]
+interface MonthAccordionProps {
+  transactions: Transaction[];
+  summary?: any;
+}
+
+const formatCurrency = (value: number) => {
+  const absValue = Math.abs(value);
+  const formatted = new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  }).format(absValue);
+  return value >= 0 ? `+${formatted}` : `-${formatted}`;
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+};
+
+export default function MonthAccordion({ transactions, summary }: MonthAccordionProps) {
+  const groupedMonths = useMemo(() => {
+    const list: Transaction[] = Array.isArray(transactions)
+      ? transactions
+      : (transactions as any)?.data || (transactions as any)?.items || [];
+
+    const groups = groupTransactionsByMonth(list);
+
+    if (summary && groups.length > 0) {
+      const now = new Date();
+      const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+      const currentMonthGroup = groups.find(g => g.id === currentMonthKey);
+
+      if (currentMonthGroup) {
+        const backendIncome = Number(summary.total_income) || 0;
+        const listIncome = currentMonthGroup.details.incomeAmount;
+
+        if (backendIncome > listIncome) {
+          const diff = backendIncome - listIncome;
+          currentMonthGroup.details.incomes.push({
+            id: 'virtual-income-' + currentMonthKey,
+            description: 'Ingresos registrados',
+            amount: diff,
+            type: 'INCOME',
+            date: now.toISOString(),
+            category: 'General'
+          } as Transaction);
+          currentMonthGroup.details.incomeAmount = backendIncome;
+          currentMonthGroup.amount = backendIncome - currentMonthGroup.details.expenseAmount;
+          currentMonthGroup.isPositive = currentMonthGroup.amount >= 0;
+        }
+      }
     }
-  },
-  { id: 2, name: 'Febrero 2026', amount: '+$153.000', isPositive: true },
-  { id: 3, name: 'Enero 2026', amount: '+$12.000', isPositive: true },
-  { id: 4, name: 'Diciembre 2025', amount: '+$333.000', isPositive: true },
-];
 
-export default function MonthAccordion() {
-  const [expandedId, setExpandedId] = useState<number | null>(1);
+    return groups;
+  }, [transactions, summary]);
+
+  const [expandedId, setExpandedId] = useState<string | null>(groupedMonths[0]?.id || null);
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Detalle por mes</Text>
 
       <View style={styles.list}>
-        {MONTHS.map((month) => (
-          <View key={month.id} style={styles.accordionContainer}>
-            <TouchableOpacity
-              style={styles.accordionHeader}
-              onPress={() => setExpandedId(expandedId === month.id ? null : month.id)}
-            >
-              <View style={styles.leftContent}>
-                <Ionicons
-                  name={expandedId === month.id ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color={APP_THEME.cards.balance.tagText}
-                />
-                <Ionicons name="person-outline" size={16} color={APP_THEME.cards.balance.tagText} />
-                <Text style={styles.monthName}>{month.name}</Text>
-              </View>
-              <Text style={[
-                styles.amount,
-                { color: month.isPositive ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text }
-              ]}>
-                {month.amount}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Contenido si se expande */}
-            {expandedId === month.id && month.details && (
-              <View style={styles.expandedContent}>
-
-                {/* Cards de resumen */}
-                <View style={styles.summaryCardsRow}>
-                  <View style={[styles.miniSummaryCard, { backgroundColor: APP_THEME.cards.income.background, borderColor: APP_THEME.cards.income.border }]}>
-                    <Text style={styles.miniSummaryLabel}>Ingresos</Text>
-                    <Text style={[styles.miniSummaryAmount, { color: APP_THEME.cards.income.text }]}>{month.details.incomeAmount}</Text>
-                  </View>
-                  <View style={[styles.miniSummaryCard, { backgroundColor: APP_THEME.cards.expense.background, borderColor: APP_THEME.cards.expense.border }]}>
-                    <Text style={styles.miniSummaryLabel}>Gastos</Text>
-                    <Text style={[styles.miniSummaryAmount, { color: APP_THEME.cards.expense.text }]}>{month.details.expenseAmount}</Text>
-                  </View>
-                </View>
-
-                {/* Lista de ingresos */}
-                <View style={styles.detailsSection}>
-                  <View style={styles.detailsSectionHeader}>
-                    <Ionicons name="trending-up" size={14} color={APP_THEME.cards.income.text} />
-                    <Text style={[styles.detailsSectionTitle, { color: APP_THEME.cards.income.text }]}>Ingresos ({month.details.incomes.length})</Text>
-                  </View>
-
-                  {month.details.incomes.map(item => (
-                    <View key={item.id} style={styles.detailItem}>
-                      <View>
-                        <Text style={styles.detailItemName}>{item.name}</Text>
-                        <Text style={styles.detailItemDate}>{item.date}</Text>
-                      </View>
-                      <View style={styles.detailItemRight}>
-                        <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.income.text }]}>{item.amount}</Text>
-                        <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
-                        <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Lista de gastos */}
-                <View style={styles.detailsSection}>
-                  <View style={styles.detailsSectionHeader}>
-                    <Ionicons name="trending-down" size={14} color={APP_THEME.cards.expense.text} />
-                    <Text style={[styles.detailsSectionTitle, { color: APP_THEME.cards.expense.text }]}>Gastos ({month.details.expenses.length})</Text>
-                  </View>
-
-                  {month.details.expenses.map(item => (
-                    <View key={item.id} style={styles.detailItem}>
-                      <View>
-                        <Text style={styles.detailItemName}>{item.name}</Text>
-                        <Text style={styles.detailItemDate}>{item.date}</Text>
-                      </View>
-                      <View style={styles.detailItemRight}>
-                        <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.expense.text }]}>{item.amount}</Text>
-                        <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
-                        <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-
-              </View>
-            )}
+        {groupedMonths.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={{ color: APP_THEME.text.secondary }}>No hay movimientos registrados.</Text>
           </View>
-        ))}
+        ) : (
+          groupedMonths.map((month) => (
+            <View key={month.id} style={styles.accordionContainer}>
+              <TouchableOpacity
+                style={styles.accordionHeader}
+                onPress={() => setExpandedId(expandedId === month.id ? null : month.id)}
+              >
+                <View style={styles.leftContent}>
+                  <Ionicons
+                    name={expandedId === month.id ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={APP_THEME.cards.balance.tagText}
+                  />
+                  <Ionicons name="calendar-outline" size={16} color={APP_THEME.cards.balance.tagText} />
+                  <Text style={styles.monthName}>{month.name}</Text>
+                </View>
+                <Text style={[
+                  styles.amount,
+                  { color: month.isPositive ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text }
+                ]}>
+                  {formatCurrency(month.amount)}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Contenido si se expande */}
+              {expandedId === month.id && (
+                <View style={styles.expandedContent}>
+
+                  {/* Cards de resumen */}
+                  <View style={styles.summaryCardsRow}>
+                    <View style={[styles.miniSummaryCard, { backgroundColor: APP_THEME.cards.income.background, borderColor: APP_THEME.cards.income.border }]}>
+                      <Text style={styles.miniSummaryLabel}>Ingresos</Text>
+                      <Text style={[styles.miniSummaryAmount, { color: APP_THEME.cards.income.text }]}>
+                        {formatCurrency(month.details.incomeAmount)}
+                      </Text>
+                    </View>
+                    <View style={[styles.miniSummaryCard, { backgroundColor: APP_THEME.cards.expense.background, borderColor: APP_THEME.cards.expense.border }]}>
+                      <Text style={styles.miniSummaryLabel}>Gastos</Text>
+                      <Text style={[styles.miniSummaryAmount, { color: APP_THEME.cards.expense.text }]}>
+                        {formatCurrency(-month.details.expenseAmount)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Lista de ingresos */}
+                  {month.details.incomes.length > 0 && (
+                    <View style={styles.detailsSection}>
+                      <View style={styles.detailsSectionHeader}>
+                        <Ionicons name="trending-up" size={14} color={APP_THEME.cards.income.text} />
+                        <Text style={[styles.detailsSectionTitle, { color: APP_THEME.cards.income.text }]}>
+                          Ingresos ({month.details.incomes.length})
+                        </Text>
+                      </View>
+
+                      {month.details.incomes.map(item => (
+                        <View key={item.id} style={styles.detailItem}>
+                          <View>
+                            <Text style={styles.detailItemName}>{item.description || item.category}</Text>
+                            <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                          </View>
+                          <View style={styles.detailItemRight}>
+                            <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.income.text }]}>
+                              +{formatCurrency(item.amount).substring(1)}
+                            </Text>
+                            <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Lista de gastos */}
+                  {month.details.expenses.length > 0 && (
+                    <View style={styles.detailsSection}>
+                      <View style={styles.detailsSectionHeader}>
+                        <Ionicons name="trending-down" size={14} color={APP_THEME.cards.expense.text} />
+                        <Text style={[styles.detailsSectionTitle, { color: APP_THEME.cards.expense.text }]}>
+                          Gastos ({month.details.expenses.length})
+                        </Text>
+                      </View>
+
+                      {month.details.expenses.map(item => (
+                        <View key={item.id} style={styles.detailItem}>
+                          <View>
+                            <Text style={styles.detailItemName}>{item.description || item.category}</Text>
+                            <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                          </View>
+                          <View style={styles.detailItemRight}>
+                            <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.expense.text }]}>
+                              -{formatCurrency(item.amount).substring(1)}
+                            </Text>
+                            <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                </View>
+              )}
+            </View>
+          ))
+        )}
       </View>
     </View>
   );
@@ -138,6 +194,14 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+  },
+  emptyContainer: {
+    padding: 20,
+    backgroundColor: APP_THEME.card.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+    alignItems: 'center',
   },
   accordionContainer: {
     backgroundColor: APP_THEME.card.background,

@@ -1,16 +1,29 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
+import { IncomeExpenseData } from '@/types/transaction';
 
-const CHART_DATA = [
-  { label: 'Nov', income: 0.6, expense: 0 },
-  { label: 'Dic', income: 0.9, expense: 0.7 },
-  { label: 'Ene', income: 0.6, expense: 0.6 },
-  { label: 'Feb', income: 0.7, expense: 0.6 },
-  { label: 'Mar', income: 0, expense: 0.55 },
-];
+interface PersonalSummaryChartProps {
+  data: IncomeExpenseData | null;
+}
 
-export default function PersonalSummaryChart() {
+export default function PersonalSummaryChart({ data }: PersonalSummaryChartProps) {
+  const chartData = data?.labels?.map((label, index) => ({
+    label,
+    income: data.income?.[index] || 0,
+    expense: data.expense?.[index] || 0,
+  })) || [];
+
+  const maxVal = Math.max(
+    ...chartData.map(d => Math.max(d.income, d.expense)),
+  );
+
+  const formatYAxis = (val: number) => {
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
+    return val.toString();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -21,27 +34,31 @@ export default function PersonalSummaryChart() {
 
       <View style={styles.chartArea}>
         <View style={styles.yAxis}>
-          <Text style={styles.yAxisLabel}>1400k</Text>
-          <Text style={styles.yAxisLabel}>1050k</Text>
-          <Text style={styles.yAxisLabel}>700k</Text>
-          <Text style={styles.yAxisLabel}>350k</Text>
-          <Text style={styles.yAxisLabel}>0k</Text>
+          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal)}</Text>
+          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.75)}</Text>
+          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.5)}</Text>
+          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.25)}</Text>
+          <Text style={styles.yAxisLabel}>0</Text>
         </View>
 
         <View style={styles.barsContainer}>
-          {CHART_DATA.map((item, index) => (
-            <View key={index} style={styles.monthCol}>
-              <View style={styles.barGroup}>
-                {item.income > 0 && (
-                  <View style={[styles.bar, { height: `${item.income * 100}%`, backgroundColor: APP_THEME.cards.income.text }]} />
-                )}
-                {item.expense > 0 && (
-                  <View style={[styles.bar, { height: `${item.expense * 100}%`, backgroundColor: APP_THEME.cards.expense.text }]} />
-                )}
+          {chartData.length === 0 ? (
+            <Text style={{ color: APP_THEME.text.secondary, alignSelf: 'center', flex: 1, textAlign: 'center' }}>No hay datos.</Text>
+          ) : (
+            chartData.map((item, index) => (
+              <View key={index} style={styles.monthCol}>
+                <View style={styles.barGroup}>
+                  {item.income > 0 && (
+                    <View style={[styles.bar, { height: `${(item.income / maxVal) * 100}%`, backgroundColor: APP_THEME.cards.income.text }]} />
+                  )}
+                  {item.expense > 0 && (
+                    <View style={[styles.bar, { height: `${(item.expense / maxVal) * 100}%`, backgroundColor: APP_THEME.cards.expense.text }]} />
+                  )}
+                </View>
+                <Text style={styles.xAxisLabel}>{item.label}</Text>
               </View>
-              <Text style={styles.xAxisLabel}>{item.label}</Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </View>
 

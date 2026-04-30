@@ -1,8 +1,25 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
+import { SummaryResponse } from '@/types/transaction';
 
-export default function PersonalTotals() {
+interface PersonalTotalsProps {
+  summary: SummaryResponse | null;
+}
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
+export default function PersonalTotals({ summary }: PersonalTotalsProps) {
+  const income = summary?.total_income || 0;
+  const expense = summary?.total_expenses || 0;
+  const balance = summary?.total_balance || 0;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -12,15 +29,15 @@ export default function PersonalTotals() {
       <View style={styles.row}>
         <View style={styles.column}>
           <Text style={styles.label}>Ingresos</Text>
-          <Text style={[styles.amount, { color: APP_THEME.cards.income.text }]}>$3.975.000</Text>
+          <Text style={[styles.amount, { color: APP_THEME.cards.income.text }]}>{formatCurrency(income)}</Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Gastos</Text>
-          <Text style={[styles.amount, { color: APP_THEME.cards.expense.text }]}>$3.402.000</Text>
+          <Text style={[styles.amount, { color: APP_THEME.cards.expense.text }]}>{formatCurrency(expense)}</Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Balance</Text>
-          <Text style={[styles.amount, { color: APP_THEME.cards.income.text }]}>$573.000</Text>
+          <Text style={[styles.amount, { color: APP_THEME.cards.income.text }]}>{formatCurrency(balance)}</Text>
         </View>
       </View>
     </View>

@@ -39,9 +39,6 @@ export default function Header({ userName = "Usuario" }) {
           size={24}
           color={APP_THEME.text.primary}
         />
-        <View style={[styles.badge, { backgroundColor: APP_THEME.components.badge.background }]}>
-          <Text style={[styles.badgeText, { color: APP_THEME.components.badge.text }]}>4</Text>
-        </View>
       </TouchableOpacity>
     </View>
   );
@@ -86,20 +83,5 @@ const styles = StyleSheet.create({
   },
   notificationBtn: {
     padding: 4,
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
   },
 });
