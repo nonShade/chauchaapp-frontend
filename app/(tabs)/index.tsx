@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -12,16 +12,39 @@ import { Ionicons } from "@expo/vector-icons";
 import { APP_THEME } from "@/constants/themes";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
+import { getSummary } from "@/services/api/transactions";
 
-const formatCLP = (amount: number) => `$${amount.toLocaleString("es-CL")}`;
+const formatCLP = (amount: number) => {
+  const formatted = new Intl.NumberFormat("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `$${formatted}`;
+};
 
 export default function HomeScreen() {
   const router = useRouter();
   const [showBalance, setShowBalance] = useState(true);
+  const [balance, setBalance] = useState(0);
+  const [ingresos, setIngresos] = useState(0);
+  const [gastos, setGastos] = useState(0);
 
-  const balance = 573000;
-  const ingresos = 3975000;
-  const gastos = 3402000;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const summary = await getSummary();
+        if (summary) {
+          setBalance(summary.total_balance || 0);
+          setIngresos(summary.total_income || 0);
+          setGastos(summary.total_expenses || 0);
+        }
+      } catch (error) {
+        console.error("Error al cargar resumen:", error);
+      }
+    }
+    loadData();
+  }, []);
+
   const news = {
     title: "El cobre experimenta una leve alza",
     summary:
