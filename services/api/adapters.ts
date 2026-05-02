@@ -35,10 +35,13 @@ export const adaptIncomeVsExpenses = (raw: any[]): IncomeExpenseData => {
   };
 };
 
-export const adaptDistribution = (raw: any[]): DistributionData[] => {
+export const adaptDistribution = (raw: any): DistributionData[] => {
+  const items: any[] = Array.isArray(raw) ? raw : (raw?.data || []);
   const colors = APP_THEME.cards.categories;
 
-  return raw.map((item, index) => ({
+  console.log('[DEBUG] adaptDistribution items:', JSON.stringify(items));
+
+  return items.map((item: any, index: number) => ({
     category: item.category_name || 'Sin categoría',
     amount: parseFloat(item.total_amount) || 0,
     percentage: item.percentage || 0,
