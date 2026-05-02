@@ -19,11 +19,18 @@ const formatCurrency = (value: number) => {
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
-  const { isLoading, error, summary, transactions, incomeVsExpenses, distribution } = useCartolaData();
+  const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution } = useCartolaData();
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
-  const balance = summary?.total_balance || 0;
+  const balance = calculatedBalance !== 0 ? calculatedBalance : (summary?.total_balance || 0);
   const savings = income * 0.2;
+
+  const historicalSummary = summary ? {
+    ...summary,
+    total_income: calculatedIncome,
+    total_expenses: calculatedExpense,
+    total_balance: calculatedBalance,
+  } : null;
 
   console.log('[DEBUG-WALLET] transactions raw:', JSON.stringify(transactions).substring(0, 500));
   const transactionsList = Array.isArray(transactions)
@@ -95,7 +102,7 @@ export default function CartolaScreen() {
               <Ionicons name="trending-up" size={16} color={APP_THEME.cards.income.text} />
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.income.text }]}>Ingresos</Text>
             </View>
-            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.text }]}>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.amountText }]}>
               {isLoading ? '...' : formatCurrency(income)}
             </Text>
           </View>
@@ -105,7 +112,7 @@ export default function CartolaScreen() {
               <Ionicons name="trending-down" size={16} color={APP_THEME.cards.expense.text} />
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.expense.text }]}>Gastos</Text>
             </View>
-            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.text }]}>
+            <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.amountText }]}>
               {isLoading ? '...' : formatCurrency(expense)}
             </Text>
           </View>
@@ -151,7 +158,7 @@ export default function CartolaScreen() {
           <>
             <PersonalSummaryChart data={incomeVsExpenses} />
             <MonthAccordion transactions={transactionsList} summary={summary} />
-            <PersonalTotals summary={summary} />
+            <PersonalTotals summary={historicalSummary} />
             <CategoryExpenses distribution={distribution} />
             <RecentTransactions transactions={transactions} />
           </>

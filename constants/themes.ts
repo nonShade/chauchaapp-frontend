@@ -61,11 +61,13 @@ export const APP_THEME = {
       background: "#081B13",
       border: "#0A331D",
       text: "#00C853",
+      amountText: "#b9d7c4",
     },
     expense: {
       background: "#1F0A0E",
       border: "#3D1318",
       text: "#FF453A",
+      amountText: "#f8cfc9",
     },
     balance: {
       background: "#0F1C2E",
@@ -92,12 +94,12 @@ export const APP_THEME = {
 };
 
 export const Typography = {
-  xs: 11, 
-  sm: 12, 
+  xs: 11,
+  sm: 12,
   base: 14,
-  md: 16, 
-  lg: 20, 
-  xl: 24, 
+  md: 16,
+  lg: 20,
+  xl: 24,
   xxl: 28,
 };
 
