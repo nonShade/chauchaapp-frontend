@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   View,
   TextInput,
@@ -388,6 +390,8 @@ export default function RegisterScreen() {
 
   const [loginError, setLoginError] = useState<string>("");
 
+  const { setAccessToken } = useAuth();
+
   const handleLogin = async () => {
     const payload = {
       email: formData.email,
@@ -418,7 +422,22 @@ export default function RegisterScreen() {
         }
         throw new Error(message);
       }
-      // TODO: almacenar data.access_token y data.refresh_token
+      // Almacenar tokens y usuario en AsyncStorage y actualizar el contexto
+      try {
+        if (data.access_token) {
+          await AsyncStorage.setItem('token', data.access_token);
+          setAccessToken(data.access_token);
+        }
+        if (data.refresh_token) {
+          await AsyncStorage.setItem('refresh_token', data.refresh_token);
+        }
+        if (data.user) {
+          await AsyncStorage.setItem('user', JSON.stringify(data.user));
+        }
+      } catch (e) {
+        console.error('Error guardando tokens/usuario en AsyncStorage:', e);
+      }
+
       console.log("Successful login:", data);
       router.replace("/(tabs)");
     } catch (err: any) {

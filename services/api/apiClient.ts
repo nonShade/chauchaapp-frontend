@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -13,13 +14,14 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     let token: string | null = null;
-    if (typeof localStorage !== 'undefined') {
-      token = localStorage.getItem('token');
-    }
-    if (!token) {
+    try {
+      token = await AsyncStorage.getItem('token');
+    } catch (e) {
+      // fallback to SecureStore if AsyncStorage fails
       try {
         token = await SecureStore.getItemAsync('token');
-      } catch (e) {
+      } catch (err) {
+        // ignore
       }
     }
     if (token) {
@@ -36,9 +38,16 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      const refreshToken = typeof localStorage !== 'undefined'
-        ? localStorage.getItem('refresh_token')
-        : null;
+      let refreshToken: string | null = null;
+      try {
+        refreshToken = await AsyncStorage.getItem('refresh_token');
+      } catch (e) {
+        try {
+          refreshToken = await SecureStore.getItemAsync('refresh_token');
+        } catch (err) {
+          refreshToken = null;
+        }
+      }
       if (refreshToken) {
         try {
           const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
@@ -46,16 +55,20 @@ apiClient.interceptors.response.use(
             refresh_token: refreshToken,
           });
           const newToken = res.data.access_token;
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('token', newToken);
+          try {
+            await AsyncStorage.setItem('token', newToken);
+          } catch (e) {
+            // ignore
           }
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return apiClient(originalRequest);
         } catch (refreshError) {
-          if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user');
+          try {
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('refresh_token');
+            await AsyncStorage.removeItem('user');
+          } catch (e) {
+            // ignore
           }
           if (typeof window !== 'undefined') {
             window.location.href = '/login';
