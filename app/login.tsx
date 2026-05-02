@@ -87,6 +87,14 @@ export default function LoginScreen() {
       const data = await response.json();
       if (response.ok && data.access_token) {
         setAccessToken(data.access_token);
+        // Guardar los datos del usuario en localStorage
+        if (data.user) {
+          try {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          } catch (e) {
+            console.error('Error al guardar datos de usuario:', e);
+          }
+        }
         router.replace("/(tabs)");
       } else {
         setLoginError("Error al iniciar sesión");
