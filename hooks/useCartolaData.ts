@@ -11,6 +11,54 @@ import {
   IncomeExpenseData,
   DistributionData
 } from '../types/transaction';
+import { APP_THEME } from '../constants/themes';
+
+//Helpers para el fallback local
+
+const MONTHS = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+function cleanCategoryName(description: string): string {
+  let clean = description.toLowerCase();
+  MONTHS.forEach(m => { clean = clean.replace(m, '').trim(); });
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+function buildDistributionFromTransactions(txList: any[], totalExpense: number): DistributionData[] {
+  const categoryMap: Record<string, { name: string; amount: number }> = {};
+
+  txList.forEach((tx: any) => {
+    try {
+      const { normalizeTransaction } = require('../services/api/adapters');
+      const normalized = normalizeTransaction(tx);
+      if (normalized.type !== 'EXPENSE') return;
+
+      const catId = tx.transaction_category_id || tx.transaction_type_id || 'sin-categoria';
+
+      const catName =
+        tx.transaction_category?.name ||
+        tx.category_name ||
+        cleanCategoryName(tx.description || 'Otros');
+
+      if (!categoryMap[catId]) {
+        categoryMap[catId] = { name: catName, amount: 0 };
+      }
+      categoryMap[catId].amount += normalized.amount;
+    } catch (_) { }
+  });
+
+  const colors = APP_THEME.cards.categories;
+  return Object.values(categoryMap)
+    .sort((a, b) => b.amount - a.amount)
+    .map((cat, idx) => ({
+      category: cat.name,
+      amount: cat.amount,
+      percentage: totalExpense > 0 ? Math.round((cat.amount / totalExpense) * 100) : 0,
+      color: colors[idx % colors.length],
+    }));
+}
 
 export function useCartolaData() {
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +88,8 @@ export function useCartolaData() {
         getDistribution()
       ]);
 
+      console.log('[DEBUG] distributionData from API:', JSON.stringify(distributionData));
+
       const txList = Array.isArray(transactionsData)
         ? transactionsData
         : (transactionsData as any)?.data || [];
@@ -47,7 +97,6 @@ export function useCartolaData() {
       let balanceAcc = 0;
       let incomeAcc = 0;
       let expenseAcc = 0;
-      const categoriesMap: Record<string, number> = {};
 
       txList.forEach((tx: any) => {
         try {
@@ -59,22 +108,16 @@ export function useCartolaData() {
           } else {
             balanceAcc -= normalized.amount;
             expenseAcc += normalized.amount;
-            let catName = tx.transaction_type?.name || tx.type_name || tx.category_name || tx.category;
-            if (!catName || catName.trim() === '') {
-              const desc = tx.description || 'Otros';
-              catName = desc.charAt(0).toUpperCase() + desc.slice(1).toLowerCase();
-            }
-            categoriesMap[catName] = (categoriesMap[catName] || 0) + normalized.amount;
           }
-        } catch (e) { }
+        } catch (_) { }
       });
 
-      // Convertir el mapa de categorías a la estructura de distribución
-      const localDistribution = Object.keys(categoriesMap).map(category => ({
-        category,
-        amount: categoriesMap[category],
-        percentage: expenseAcc > 0 ? Math.round((categoriesMap[category] / expenseAcc) * 100) : 0
-      }));
+      const apiDistribution = Array.isArray(distributionData) ? distributionData : [];
+      const finalDistribution = apiDistribution.length > 0
+        ? apiDistribution
+        : buildDistributionFromTransactions(txList, expenseAcc);
+
+      console.log('[DEBUG] finalDistribution:', JSON.stringify(finalDistribution));
 
       setSummary(summaryData);
       setTransactions(transactionsData);
@@ -82,7 +125,7 @@ export function useCartolaData() {
       setCalculatedIncome(incomeAcc);
       setCalculatedExpense(expenseAcc);
       setIncomeVsExpenses(incomeVsExpensesData);
-      setDistribution(localDistribution.length > 0 ? localDistribution : distributionData);
+      setDistribution(finalDistribution);
     } catch (err: any) {
       console.error('Error fetching cartola data:', err);
       setError(err.message || 'Error al cargar los datos de la cartola.');
