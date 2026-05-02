@@ -13,14 +13,14 @@ import { APP_THEME } from "@/constants/themes";
 import { useAuth } from "@/contexts/AuthContext";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
-import { getSummary } from "@/services/api/transactions";
+import { useCartolaData } from "@/hooks/useCartolaData";
 
 const formatCLP = (amount: number) => {
-  const formatted = new Intl.NumberFormat("de-DE", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
   }).format(amount);
-  return `$${formatted}`;
 };
 
 export default function HomeScreen() {
@@ -38,24 +38,15 @@ export default function HomeScreen() {
     affectsLabel: "Impacto Positivo",
   };
 
-  // Cargar datos del resumen desde el backend cuando el token esté disponible
-  useEffect(() => {
-    if (!accessToken) return;
+  const { isLoading, summary, calculatedBalance } = useCartolaData();
 
-    async function loadData() {
-      try {
-        const summary = await getSummary();
-        if (summary) {
-          setBalance(summary.total_balance || 0);
-          setIngresos(summary.total_income || 0);
-          setGastos(summary.total_expenses || 0);
-        }
-      } catch (error) {
-        console.error("Error al cargar resumen:", error);
-      }
+  useEffect(() => {
+    if (!isLoading && summary) {
+      setBalance(calculatedBalance !== 0 ? calculatedBalance : (summary.total_balance || 0));
+      setIngresos(summary.total_income || 0);
+      setGastos(summary.total_expenses || 0);
     }
-    loadData();
-  }, [accessToken]);
+  }, [isLoading, summary, calculatedBalance]);
 
   return (
     <SafeAreaView
