@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
   accessToken: string | null;
@@ -12,16 +13,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar token desde localStorage al iniciar
+  // Cargar token desde AsyncStorage al iniciar
   useEffect(() => {
-    const loadToken = () => {
+    const loadToken = async () => {
       try {
-        const savedToken = localStorage.getItem('token');
+        const savedToken = await AsyncStorage.getItem('token');
         if (savedToken) {
           setAccessToken(savedToken);
         }
       } catch (error) {
-        console.error('Error al cargar token:', error);
+        console.error('Error al cargar token desde AsyncStorage:', error);
       } finally {
         setIsLoading(false);
       }
@@ -30,13 +31,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadToken();
   }, []);
 
-  // Guardar token en localStorage cuando cambia
+  // Guardar token en AsyncStorage cuando cambia
   const handleSetAccessToken = (token: string | null) => {
     setAccessToken(token);
     if (token) {
-      localStorage.setItem('token', token);
+      AsyncStorage.setItem('token', token).catch((e) => console.error('Error guardando token:', e));
     } else {
-      localStorage.removeItem('token');
+      AsyncStorage.removeItem('token').catch((e) => console.error('Error removiendo token:', e));
     }
   };
 

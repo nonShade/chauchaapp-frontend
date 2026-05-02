@@ -19,6 +19,20 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
+const matchesTopicSelection = (
+  topicKey: string,
+  sourceTopics: string[],
+  topicsCatalog: TopicOption[]
+) => {
+  const normalizedKey = normalizeText(topicKey);
+  const matchingTopic = topicsCatalog.find((topic) => normalizeText(topic.name) === normalizedKey);
+
+  return sourceTopics.some((topicValue) => {
+    const normalizedValue = normalizeText(topicValue);
+    return normalizedValue === normalizedKey || (matchingTopic ? normalizedValue === normalizeText(matchingTopic.id) : false);
+  });
+};
+
 export default function PerfilScreen() {
   const router = useRouter();
   const { accessToken } = useAuth();
@@ -36,22 +50,30 @@ export default function PerfilScreen() {
 
   // Categorías de perfil financiero
   const FINANCIAL_CATEGORIES = [
-    { id: 'transporte', label: 'Transporte', icon: 'car' },
+    { id: 'sueldo_minimo', label: 'Sueldo mínimo', icon: 'hand-holding-usd' },
+    { id: 'combustible', label: 'Combustible', icon: 'gas-pump' },
+    { id: 'alimentos', label: 'Alimentos', icon: 'utensils' },
     { id: 'vivienda', label: 'Vivienda', icon: 'home' },
-    { id: 'salud', label: 'Salud', icon: 'heartbeat' },
-    { id: 'sueldo', label: 'Sueldo', icon: 'briefcase' },
-    { id: 'alimentacion', label: 'Alimentación', icon: 'utensils' },
-    { id: 'entretenimiento', label: 'Entretenimiento', icon: 'gamepad' },
+    { id: 'transporte', label: 'Transporte', icon: 'car' },
+    { id: 'servicios_basicos', label: 'Servicios básicos', icon: 'plug' },
+    { id: 'impuestos', label: 'Impuestos', icon: 'file-invoice-dollar' },
+    { id: 'creditos', label: 'Créditos', icon: 'wallet' },
+    { id: 'ahorro', label: 'Ahorro', icon: 'piggy-bank' },
+    { id: 'inversiones', label: 'Inversiones', icon: 'chart-line' },
   ];
 
   // Mapeo de topics seleccionados
   const [selectedTopics, setSelectedTopics] = useState<{ [key: string]: boolean }>({
-    'transporte': false,
+    'sueldo_minimo': false,
+    'combustible': false,
+    'alimentos': false,
     'vivienda': false,
-    'salud': false,
-    'sueldo': false,
-    'alimentacion': false,
-    'entretenimiento': false,
+    'transporte': false,
+    'servicios_basicos': false,
+    'impuestos': false,
+    'creditos': false,
+    'ahorro': false,
+    'inversiones': false,
   });
 
   useEffect(() => {
@@ -60,10 +82,12 @@ export default function PerfilScreen() {
       return;
     }
 
+    const token = accessToken;
+
     async function loadProfile() {
       try {
         const [profile, incomeTypesData, newsTopicsData] = await Promise.all([
-          getUserProfile(accessToken),
+          getUserProfile(token),
           getIncomeTypes(),
           getNewsTopics(),
         ]);
@@ -78,19 +102,17 @@ export default function PerfilScreen() {
           setDraftIncomeTypeId(profile.income_type_id);
           setDraftMonthlyIncome(String(Math.round(Number(profile.monthly_income || '0'))));
 
-          // Mapear topics del perfil a los toggles usando los UUIDs de newsTopicsData
-          const findId = (key: string) => {
-            const found = newsTopicsData.find(t => normalizeText(t.name) === normalizeText(key));
-            return found?.id;
-          };
-
           const topicsMap = {
-            'transporte': !!(findId('transporte') && profile.topics.includes(findId('transporte')!)),
-            'vivienda': !!(findId('vivienda') && profile.topics.includes(findId('vivienda')!)),
-            'salud': !!(findId('salud') && profile.topics.includes(findId('salud')!)),
-            'sueldo': !!(findId('sueldo') && profile.topics.includes(findId('sueldo')!)),
-            'alimentacion': !!(findId('alimentacion') && profile.topics.includes(findId('alimentacion')!)),
-            'entretenimiento': !!(findId('entretenimiento') && profile.topics.includes(findId('entretenimiento')!)),
+            sueldo_minimo: matchesTopicSelection('sueldo_minimo', profile.topics, newsTopicsData),
+            combustible: matchesTopicSelection('combustible', profile.topics, newsTopicsData),
+            alimentos: matchesTopicSelection('alimentos', profile.topics, newsTopicsData),
+            vivienda: matchesTopicSelection('vivienda', profile.topics, newsTopicsData),
+            transporte: matchesTopicSelection('transporte', profile.topics, newsTopicsData),
+            servicios_basicos: matchesTopicSelection('servicios_basicos', profile.topics, newsTopicsData),
+            impuestos: matchesTopicSelection('impuestos', profile.topics, newsTopicsData),
+            creditos: matchesTopicSelection('creditos', profile.topics, newsTopicsData),
+            ahorro: matchesTopicSelection('ahorro', profile.topics, newsTopicsData),
+            inversiones: matchesTopicSelection('inversiones', profile.topics, newsTopicsData),
           };
           setSelectedTopics(topicsMap);
         }
@@ -169,14 +191,9 @@ export default function PerfilScreen() {
         income_type_id: resolveIncomeTypeId(draftIncomeTypeId),
         monthly_income: Number.isFinite(monthlyIncome) ? monthlyIncome : 0,
         monthly_expenses: Number.isFinite(monthlyExpenses) ? monthlyExpenses : 0,
-          topics: Object.entries(selectedTopics)
-            .filter(([, value]) => value)
-            .map(([topicKey]) => {
-              // map the friendly key (e.g. 'transporte') to the topic UUID fetched from newsTopics
-              const matched = newsTopics.find(t => normalizeText(t.name) === normalizeText(topicKey));
-              return matched?.id;
-            })
-            .filter(Boolean) as string[],
+        topics: Object.entries(selectedTopics)
+          .filter(([, value]) => value)
+          .map(([topicKey]) => topicKey),
       });
 
       if (updatedProfile) {
@@ -186,19 +203,17 @@ export default function PerfilScreen() {
         setDraftIncomeTypeId(updatedProfile.income_type_id);
         setDraftMonthlyIncome(String(Math.round(Number(updatedProfile.monthly_income || '0'))));
 
-        // Remap updatedProfile.topics (UUIDs) back into our friendly keys
-        const mapFromUpdated = (key: string) => {
-          const found = newsTopics.find(t => normalizeText(t.name) === normalizeText(key));
-          return !!(found && updatedProfile.topics.includes(found.id));
-        };
-
         setSelectedTopics({
-          'transporte': mapFromUpdated('transporte'),
-          'vivienda': mapFromUpdated('vivienda'),
-          'salud': mapFromUpdated('salud'),
-          'sueldo': mapFromUpdated('sueldo'),
-          'alimentacion': mapFromUpdated('alimentacion'),
-          'entretenimiento': mapFromUpdated('entretenimiento'),
+          sueldo_minimo: matchesTopicSelection('sueldo_minimo', updatedProfile.topics, newsTopics),
+          combustible: matchesTopicSelection('combustible', updatedProfile.topics, newsTopics),
+          alimentos: matchesTopicSelection('alimentos', updatedProfile.topics, newsTopics),
+          vivienda: matchesTopicSelection('vivienda', updatedProfile.topics, newsTopics),
+          transporte: matchesTopicSelection('transporte', updatedProfile.topics, newsTopics),
+          servicios_basicos: matchesTopicSelection('servicios_basicos', updatedProfile.topics, newsTopics),
+          impuestos: matchesTopicSelection('impuestos', updatedProfile.topics, newsTopics),
+          creditos: matchesTopicSelection('creditos', updatedProfile.topics, newsTopics),
+          ahorro: matchesTopicSelection('ahorro', updatedProfile.topics, newsTopics),
+          inversiones: matchesTopicSelection('inversiones', updatedProfile.topics, newsTopics),
         });
 
         setIsEditMode(false);

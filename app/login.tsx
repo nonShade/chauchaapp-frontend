@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   TextInput,
@@ -90,9 +91,9 @@ export default function LoginScreen() {
         // Guardar los datos del usuario en localStorage
         if (data.user) {
           try {
-            localStorage.setItem('user', JSON.stringify(data.user));
+            await AsyncStorage.setItem('user', JSON.stringify(data.user));
           } catch (e) {
-            console.error('Error al guardar datos de usuario:', e);
+            console.error('Error al guardar datos de usuario en AsyncStorage:', e);
           }
         }
         router.replace("/(tabs)");
