@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { APP_THEME } from '@/constants/themes';
 
 export default function NoticiasScreen() {
   return (
@@ -12,12 +12,12 @@ export default function NoticiasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: APP_THEME.background.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
-    color: Colors.textPrimary,
+    color: APP_THEME.text.primary,
     fontSize: 18,
   },
 });

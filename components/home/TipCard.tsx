@@ -1,15 +1,16 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { APP_THEME } from '@/constants/themes';
 
 export default function TipCard({ tip = '', semana = '' }) {
   return (
-    <View style={styles.container}>
-      <View style={styles.iconContainer}>
-        <Ionicons name="bulb-outline" size={24} color="#F97316" />
+    <View style={[styles.container, { backgroundColor: APP_THEME.cards.tip.background, borderColor: APP_THEME.cards.tip.border }]}>
+      <View style={[styles.iconContainer, { backgroundColor: APP_THEME.cards.tip.border }]}>
+        <Ionicons name="bulb-outline" size={24} color={APP_THEME.cards.tip.accent} />
       </View>
       <View style={styles.contentContainer}>
-        <Text style={styles.title}>Tip financiero del dia</Text>
-        <Text style={styles.tipText}>{tip}</Text>
+        <Text style={[styles.title, { color: APP_THEME.cards.tip.text }]}>Tip financiero del dia</Text>
+        <Text style={[styles.tipText, { color: APP_THEME.text.secondary }]}>{tip}</Text>
       </View>
     </View>
   );
@@ -17,19 +18,16 @@ export default function TipCard({ tip = '', semana = '' }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#2A1610',
     flexDirection: 'row',
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
-    marginHorizontal: 20,
+    marginHorizontal: 0,
     borderWidth: 1,
-    borderColor: 'rgba(249, 115, 22, 0.2)',
   },
   iconContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#4A2A1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -38,13 +36,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   tipText: {
-    color: '#9CA3AF',
     fontSize: 14,
     lineHeight: 22,
   },

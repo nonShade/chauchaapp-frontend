@@ -1,36 +1,44 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { APP_THEME } from "@/constants/themes";
 
-export default function Header({ userName = 'Usuario' }) {
+export default function Header({ userName = "Usuario" }) {
   const router = useRouter();
   const initials = userName.substring(0, 1).toUpperCase();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return 'Buenos días';
-    if (hour >= 12 && hour < 19) return 'Buenas tardes';
-    return 'Buenas noches';
+    if (hour >= 6 && hour < 12) return "Buenos días";
+    if (hour >= 12 && hour < 19) return "Buenas tardes";
+    return "Buenas noches";
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.profileSection}
-        onPress={() => router.push('/profile')}
+        onPress={() => router.push("/profile")}
       >
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+          <Image 
+            source={require("@/assets/images/logo-chauchapp.png")} 
+            style={{ width: 36, height: 36, borderRadius: 8 }}
+            resizeMode="contain"
+          />
         </View>
         <View style={styles.textBlock}>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.userName}>{userName}</Text>
+          <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>{getGreeting()}</Text>
+          <Text style={[styles.userName, { color: APP_THEME.text.primary }]}>{userName}</Text>
         </View>
       </TouchableOpacity>
-      
+
       <TouchableOpacity style={styles.notificationBtn}>
-        <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+        <Ionicons
+          name="notifications-outline"
+          size={24}
+          color={APP_THEME.text.primary}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -38,41 +46,40 @@ export default function Header({ userName = 'Usuario' }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginTop: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_THEME.card.border,
   },
   profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: Colors.greenPrimary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   avatarText: {
-    color: '#000',
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 18,
   },
   textBlock: {
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   greeting: {
-    color: Colors.textSecondary,
     fontSize: 12,
   },
   userName: {
-    color: Colors.textPrimary,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   notificationBtn: {
     padding: 4,

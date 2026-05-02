@@ -17,10 +17,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
-import { useThemeCs } from "@/components/colors/themeDetector";
 import { Animated } from "react-native";
-import { ThemeToggle } from "@/components/colors/toggle-colors";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { APP_THEME } from "@/constants/themes";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -89,7 +88,14 @@ export default function RegisterScreen() {
   const [categoryMap, setCategoryMap] = useState<Record<string, any>>({});
 
   const router = useRouter();
-  const theme = useThemeCs();
+
+  const theme = {
+    background: APP_THEME.background.primary,
+    foreground: APP_THEME.text.primary,
+    border: APP_THEME.input.border,
+    primary: APP_THEME.button.primary.background,
+    mutedForeground: APP_THEME.text.secondary,
+  };
 
   const [step, setStep] = useState(1);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -432,8 +438,8 @@ export default function RegisterScreen() {
     },
   ];
   const inputErrorStyle = {
-    borderColor: "#db2629",
-    backgroundColor: "#ff000010",
+    borderColor: APP_THEME.status.error,
+    backgroundColor: APP_THEME.status.error + "15",
   };
   const passwordContainerStyle = [
     styles.passwordContainer,
@@ -859,7 +865,6 @@ export default function RegisterScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <ThemeToggle></ThemeToggle>
       {/* Barra superior */}
       <View style={styles.topNavbar}>
         <TouchableOpacity
@@ -884,7 +889,11 @@ export default function RegisterScreen() {
               ]}
             >
               {step > 1 ? (
-                <Ionicons name="checkmark" size={32} color="#ffffff" />
+                <Ionicons
+                  name="checkmark"
+                  size={32}
+                  color={APP_THEME.text.primary}
+                />
               ) : (
                 <Feather name="user" size={24} color={theme.primary} />
               )}
@@ -902,7 +911,11 @@ export default function RegisterScreen() {
               ]}
             >
               {step > 2 ? (
-                <Ionicons name="checkmark" size={32} color={"#ffffff"} />
+                <Ionicons
+                  name="checkmark"
+                  size={32}
+                  color={APP_THEME.text.primary}
+                />
               ) : (
                 <Feather
                   name="dollar-sign"
@@ -975,17 +988,20 @@ export default function RegisterScreen() {
         <View style={[styles.formCard, { backgroundColor: theme.background }]}>
           {firstError !== "" && (
             <View
-              style={[styles.errorBanner, { backgroundColor: "#ff000020" }]}
+              style={[
+                styles.errorBanner,
+                { backgroundColor: APP_THEME.status.error + "15" },
+              ]}
             >
               <Ionicons
                 name="alert-circle-outline"
                 size={24}
-                color={"#ff0000"}
+                color={APP_THEME.status.error}
               />
               <Text
                 style={[
                   styles.errorText,
-                  { color: "#ff0000" },
+                  { color: APP_THEME.status.error },
                   styles.normalText,
                 ]}
               >
@@ -1051,33 +1067,33 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 16,
     justifyContent: "space-between",
   },
 
   normalText: {
-    fontSize: 22,
+    fontSize: 16,
   },
 
   topNavbar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 15,
-    marginBottom: 30,
+    gap: 12,
+    marginBottom: 16,
     paddingHorizontal: 16,
   },
 
   backButton: {
     borderRadius: 100,
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
 
   progressBar: {
     flex: 1,
-    gap: 12,
+    gap: 8,
     alignItems: "center",
   },
 
@@ -1088,8 +1104,8 @@ const styles = StyleSheet.create({
   },
 
   progressStep: {
-    width: 45,
-    height: 45,
+    width: 40,
+    height: 40,
     borderRadius: 100,
     justifyContent: "center",
     alignItems: "center",
@@ -1097,7 +1113,7 @@ const styles = StyleSheet.create({
   },
 
   progressTrack: {
-    height: 10,
+    height: 6,
     width: "90%",
     borderRadius: 4,
     overflow: "hidden",
@@ -1111,28 +1127,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: 80,
   },
 
   position: {
     fontWeight: "500",
-    fontSize: 20,
+    fontSize: 14,
   },
 
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 4,
   },
 
   subtitle: {
-    fontSize: 16,
-    marginBottom: 24,
+    fontSize: 14,
+    marginBottom: 16,
   },
 
   formCard: {
     borderRadius: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
 
   errorBanner: {
@@ -1149,7 +1165,7 @@ const styles = StyleSheet.create({
   },
 
   mainContainer: {
-    gap: 10,
+    gap: 12,
   },
 
   fieldContainer: {
@@ -1168,24 +1184,25 @@ const styles = StyleSheet.create({
 
   inputLabel: {
     marginBottom: 4,
-    fontWeight: "500",
+    fontWeight: "600",
+    fontSize: 14,
   },
 
   input: {
     borderWidth: 1,
-    borderRadius: 16,
-    height: 64,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    height: 48,
+    paddingHorizontal: 16,
     justifyContent: "center",
   },
 
   passwordContainer: {
     borderWidth: 1,
-    borderRadius: 8,
-    height: 64,
+    borderRadius: 12,
+    height: 48,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
 
   passwordInput: {
@@ -1225,12 +1242,13 @@ const styles = StyleSheet.create({
 
   footer: {
     borderTopWidth: 1,
-    padding: 16,
-    marginBottom: 16,
+    padding: 12,
+    paddingBottom: 12,
+    gap: 12,
   },
 
   navButton: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -1239,6 +1257,6 @@ const styles = StyleSheet.create({
   navButtonText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: 14,
   },
 });
