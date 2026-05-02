@@ -1,5 +1,16 @@
-import { Transaction, IncomeExpenseData, DistributionData } from '../../types/transaction';
+import { Transaction, IncomeExpenseData, DistributionData, SummaryResponse } from '../../types/transaction';
 import { APP_THEME } from '../../constants/themes';
+
+export const adaptSummary = (raw: any): SummaryResponse => {
+  return {
+    total_balance: parseFloat(raw.total_balance) || 0,
+    total_income: parseFloat(raw.total_income) || 0,
+    total_expenses: parseFloat(raw.total_expenses) || 0,
+    period_income: raw.period_income !== undefined ? parseFloat(raw.period_income) : undefined,
+    period_expenses: raw.period_expenses !== undefined ? parseFloat(raw.period_expenses) : undefined,
+    period_balance: raw.period_balance !== undefined ? parseFloat(raw.period_balance) : undefined,
+  };
+};
 
 const MONTH_NAMES: Record<string, string> = {
   '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril',

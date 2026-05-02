@@ -11,6 +11,9 @@ export interface SummaryResponse {
   total_income: number;
   total_expenses: number;
   total_balance: number;
+  period_income?: number;
+  period_expenses?: number;
+  period_balance?: number;
 }
 
 export interface IncomeExpenseData {
