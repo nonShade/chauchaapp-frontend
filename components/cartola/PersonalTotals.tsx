@@ -37,7 +37,7 @@ export default function PersonalTotals({ summary }: PersonalTotalsProps) {
         </View>
         <View style={styles.column}>
           <Text style={styles.label}>Balance</Text>
-          <Text style={[styles.amount, { color: APP_THEME.cards.income.text }]}>{formatCurrency(balance)}</Text>
+          <Text style={[styles.amount, { color: balance < 0 ? APP_THEME.cards.expense.text : APP_THEME.cards.income.text }]}>{formatCurrency(balance)}</Text>
         </View>
       </View>
     </View>
