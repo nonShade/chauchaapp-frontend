@@ -88,15 +88,16 @@ export function useCartolaData() {
         getDistribution()
       ]);
 
-      console.log('[DEBUG] distributionData from API:', JSON.stringify(distributionData));
-
       const txList = Array.isArray(transactionsData)
         ? transactionsData
         : (transactionsData as any)?.data || [];
 
+      console.log('[DEBUG] Raw txList length:', txList.length);
+
       let balanceAcc = 0;
       let incomeAcc = 0;
       let expenseAcc = 0;
+      const localCategories = new Set();
 
       txList.forEach((tx: any) => {
         try {
@@ -108,14 +109,22 @@ export function useCartolaData() {
           } else {
             balanceAcc -= normalized.amount;
             expenseAcc += normalized.amount;
+
+            const catId = tx.transaction_category_id || tx.transaction_type_id || 'sin-id';
+            localCategories.add(catId);
           }
         } catch (_) { }
       });
 
       const apiDistribution = Array.isArray(distributionData) ? distributionData : [];
-      const finalDistribution = apiDistribution.length > 0
-        ? apiDistribution
-        : buildDistributionFromTransactions(txList, expenseAcc);
+
+      const useLocalFallback = apiDistribution.length <= 1 && localCategories.size > apiDistribution.length;
+
+      console.log(`[DEBUG] API Categories: ${apiDistribution.length}, Local Categories detected: ${localCategories.size}`);
+
+      const finalDistribution = useLocalFallback
+        ? buildDistributionFromTransactions(txList, expenseAcc)
+        : apiDistribution;
 
       console.log('[DEBUG] finalDistribution:', JSON.stringify(finalDistribution));
 
