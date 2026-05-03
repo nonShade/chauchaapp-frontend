@@ -19,20 +19,6 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
-const matchesTopicSelection = (
-  topicKey: string,
-  sourceTopics: string[],
-  topicsCatalog: TopicOption[]
-) => {
-  const normalizedKey = normalizeText(topicKey);
-  const matchingTopic = topicsCatalog.find((topic) => normalizeText(topic.name) === normalizedKey);
-
-  return sourceTopics.some((topicValue) => {
-    const normalizedValue = normalizeText(topicValue);
-    return normalizedValue === normalizedKey || (matchingTopic ? normalizedValue === normalizeText(matchingTopic.id) : false);
-  });
-};
-
 export default function PerfilScreen() {
   const router = useRouter();
   const { accessToken } = useAuth();
@@ -48,33 +34,7 @@ export default function PerfilScreen() {
   const [draftIncomeTypeId, setDraftIncomeTypeId] = useState('');
   const [draftMonthlyIncome, setDraftMonthlyIncome] = useState('');
 
-  // Categorías de perfil financiero
-  const FINANCIAL_CATEGORIES = [
-    { id: 'sueldo_minimo', label: 'Sueldo mínimo', icon: 'hand-holding-usd' },
-    { id: 'combustible', label: 'Combustible', icon: 'gas-pump' },
-    { id: 'alimentos', label: 'Alimentos', icon: 'utensils' },
-    { id: 'vivienda', label: 'Vivienda', icon: 'home' },
-    { id: 'transporte', label: 'Transporte', icon: 'car' },
-    { id: 'servicios_basicos', label: 'Servicios básicos', icon: 'plug' },
-    { id: 'impuestos', label: 'Impuestos', icon: 'file-invoice-dollar' },
-    { id: 'creditos', label: 'Créditos', icon: 'wallet' },
-    { id: 'ahorro', label: 'Ahorro', icon: 'piggy-bank' },
-    { id: 'inversiones', label: 'Inversiones', icon: 'chart-line' },
-  ];
-
-  // Mapeo de topics seleccionados
-  const [selectedTopics, setSelectedTopics] = useState<{ [key: string]: boolean }>({
-    'sueldo_minimo': false,
-    'combustible': false,
-    'alimentos': false,
-    'vivienda': false,
-    'transporte': false,
-    'servicios_basicos': false,
-    'impuestos': false,
-    'creditos': false,
-    'ahorro': false,
-    'inversiones': false,
-  });
+  const [selectedTopics, setSelectedTopics] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!accessToken) {
@@ -102,18 +62,10 @@ export default function PerfilScreen() {
           setDraftIncomeTypeId(profile.income_type_id);
           setDraftMonthlyIncome(String(Math.round(Number(profile.monthly_income || '0'))));
 
-          const topicsMap = {
-            sueldo_minimo: matchesTopicSelection('sueldo_minimo', profile.topics, newsTopicsData),
-            combustible: matchesTopicSelection('combustible', profile.topics, newsTopicsData),
-            alimentos: matchesTopicSelection('alimentos', profile.topics, newsTopicsData),
-            vivienda: matchesTopicSelection('vivienda', profile.topics, newsTopicsData),
-            transporte: matchesTopicSelection('transporte', profile.topics, newsTopicsData),
-            servicios_basicos: matchesTopicSelection('servicios_basicos', profile.topics, newsTopicsData),
-            impuestos: matchesTopicSelection('impuestos', profile.topics, newsTopicsData),
-            creditos: matchesTopicSelection('creditos', profile.topics, newsTopicsData),
-            ahorro: matchesTopicSelection('ahorro', profile.topics, newsTopicsData),
-            inversiones: matchesTopicSelection('inversiones', profile.topics, newsTopicsData),
-          };
+          const topicsMap: Record<string, boolean> = {};
+          newsTopicsData.forEach((topic) => {
+            topicsMap[topic.id] = profile.topics.includes(topic.id);
+          });
           setSelectedTopics(topicsMap);
         }
       } catch (error) {
@@ -193,7 +145,7 @@ export default function PerfilScreen() {
         monthly_expenses: Number.isFinite(monthlyExpenses) ? monthlyExpenses : 0,
         topics: Object.entries(selectedTopics)
           .filter(([, value]) => value)
-          .map(([topicKey]) => topicKey),
+          .map(([topicId]) => topicId),
       });
 
       if (updatedProfile) {
@@ -203,18 +155,11 @@ export default function PerfilScreen() {
         setDraftIncomeTypeId(updatedProfile.income_type_id);
         setDraftMonthlyIncome(String(Math.round(Number(updatedProfile.monthly_income || '0'))));
 
-        setSelectedTopics({
-          sueldo_minimo: matchesTopicSelection('sueldo_minimo', updatedProfile.topics, newsTopics),
-          combustible: matchesTopicSelection('combustible', updatedProfile.topics, newsTopics),
-          alimentos: matchesTopicSelection('alimentos', updatedProfile.topics, newsTopics),
-          vivienda: matchesTopicSelection('vivienda', updatedProfile.topics, newsTopics),
-          transporte: matchesTopicSelection('transporte', updatedProfile.topics, newsTopics),
-          servicios_basicos: matchesTopicSelection('servicios_basicos', updatedProfile.topics, newsTopics),
-          impuestos: matchesTopicSelection('impuestos', updatedProfile.topics, newsTopics),
-          creditos: matchesTopicSelection('creditos', updatedProfile.topics, newsTopics),
-          ahorro: matchesTopicSelection('ahorro', updatedProfile.topics, newsTopics),
-          inversiones: matchesTopicSelection('inversiones', updatedProfile.topics, newsTopics),
+        const nextSelectedTopics: Record<string, boolean> = {};
+        newsTopics.forEach((topic) => {
+          nextSelectedTopics[topic.id] = updatedProfile.topics.includes(topic.id);
         });
+        setSelectedTopics(nextSelectedTopics);
 
         setIsEditMode(false);
       }
@@ -480,14 +425,14 @@ export default function PerfilScreen() {
             Estos datos ayudan a personalizar las noticias y recomendaciones.
           </Text>
 
-          {FINANCIAL_CATEGORIES.map((category, index) => (
-            <View key={category.id} style={[styles.toggleRow, index === FINANCIAL_CATEGORIES.length - 1 && styles.toggleRow__last, !isEditMode && styles.toggleRowDisabled]}>
+          {newsTopics.map((category, index) => (
+            <View key={category.id} style={[styles.toggleRow, index === newsTopics.length - 1 && styles.toggleRow__last, !isEditMode && styles.toggleRowDisabled]}>
               <View style={styles.toggleContent}>
-                <FontAwesome5 name={category.icon} size={18} color="#6B7280" />
-                <Text style={styles.toggleLabel}>{category.label}</Text>
+                <FontAwesome5 name="tag" size={18} color="#6B7280" />
+                <Text style={styles.toggleLabel}>{category.name}</Text>
               </View>
               <Switch
-                value={selectedTopics[category.id]}
+                value={selectedTopics[category.id] ?? false}
                 onValueChange={(value) => handleTopicChange(category.id, value)}
                 disabled={!isEditMode || saving}
                 trackColor={{ false: '#333', true: '#00a452' }}
