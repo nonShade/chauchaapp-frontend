@@ -19,6 +19,21 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
+const getTopicIcon = (name: string) => {
+  const n = normalizeText(name);
+  if (n.includes('sueldo')) return 'hand-holding-usd';
+  if (n.includes('combust')) return 'gas-pump';
+  if (n.includes('aliment') || n.includes('alimento')) return 'utensils';
+  if (n.includes('viviend')) return 'home';
+  if (n.includes('transport')) return 'car';
+  if (n.includes('servici') || n.includes('basic')) return 'plug';
+  if (n.includes('impu')) return 'file-invoice-dollar';
+  if (n.includes('credit') || n.includes('credito') || n.includes('cr?dit')) return 'credit-card';
+  if (n.includes('ahorr')) return 'wallet';
+  if (n.includes('inversion')) return 'chart-line';
+  return 'tag';
+};
+
 export default function PerfilScreen() {
   const router = useRouter();
   const { accessToken } = useAuth();
@@ -428,7 +443,7 @@ export default function PerfilScreen() {
           {newsTopics.map((category, index) => (
             <View key={category.id} style={[styles.toggleRow, index === newsTopics.length - 1 && styles.toggleRow__last, !isEditMode && styles.toggleRowDisabled]}>
               <View style={styles.toggleContent}>
-                <FontAwesome5 name="tag" size={18} color="#6B7280" />
+                <FontAwesome5 name={getTopicIcon(category.name)} size={18} color="#6B7280" />
                 <Text style={styles.toggleLabel}>{category.name}</Text>
               </View>
               <Switch
