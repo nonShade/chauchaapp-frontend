@@ -55,32 +55,38 @@ export default function CategoryExpenses({ distribution }: CategoryExpensesProps
     scrollViewRef.current?.scrollTo({ x: index * SNAP_INTERVAL, animated: true });
   };
 
-  const renderItem = (item: DistributionData, index: number) => (
-    <View key={index} style={styles.item}>
-      <View style={styles.itemHeader}>
-        <View style={styles.itemInfo}>
-          <Ionicons
-            name="pricetag-outline"
-            size={18}
-            color={APP_THEME.text.secondary}
-          />
-          <Text style={styles.itemName}>{item.category}</Text>
+  const maxAmount = sortedDistribution.length > 0 ? sortedDistribution[0].amount : 0;
+
+  const renderItem = (item: DistributionData, index: number) => {
+    const relativePercentage = maxAmount > 0 ? (item.amount / maxAmount) * 100 : 0;
+
+    return (
+      <View key={index} style={styles.item}>
+        <View style={styles.itemHeader}>
+          <View style={styles.itemInfo}>
+            <Ionicons
+              name="pricetag-outline"
+              size={18}
+              color={APP_THEME.text.secondary}
+            />
+            <Text style={styles.itemName}>{item.category}</Text>
+          </View>
+          <Text style={styles.itemAmount}>{formatCurrency(item.amount)}</Text>
         </View>
-        <Text style={styles.itemAmount}>{formatCurrency(item.amount)}</Text>
+        <View style={styles.progressBarBg}>
+          <View
+            style={[
+              styles.progressBarFill,
+              {
+                width: `${relativePercentage}%`,
+                backgroundColor: expenseColor
+              }
+            ]}
+          />
+        </View>
       </View>
-      <View style={styles.progressBarBg}>
-        <View
-          style={[
-            styles.progressBarFill,
-            {
-              width: `${item.percentage}%`,
-              backgroundColor: expenseColor
-            }
-          ]}
-        />
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderDotIndicator = () => {
     if (chunks.length <= 1) return null;
@@ -181,6 +187,7 @@ const styles = StyleSheet.create({
   },
   item: {
     gap: 10,
+    paddingRight: 10,
   },
   itemHeader: {
     flexDirection: 'row',
