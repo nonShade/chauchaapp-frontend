@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
 import PersonalSummaryChart from '@/components/cartola/PersonalSummaryChart';
 import MonthAccordion from '@/components/cartola/MonthAccordion';
@@ -8,6 +9,7 @@ import PersonalTotals from '@/components/cartola/PersonalTotals';
 import CategoryExpenses from '@/components/cartola/CategoryExpenses';
 import RecentTransactions from '@/components/cartola/RecentTransactions';
 import { useCartolaData } from '@/hooks/useCartolaData';
+import { deleteTransaction } from '@/services/api/transactions';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CL', {
@@ -19,11 +21,58 @@ const formatCurrency = (value: number) => {
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
-  const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution } = useCartolaData();
+  const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution, refetch } = useCartolaData();
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
   const balance = calculatedBalance !== 0 ? calculatedBalance : (summary?.total_balance || 0);
   const savings = income * 0.2;
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
+
+  const handleDelete = useCallback((transactionId: string) => {
+    console.log('[Wallet] handleDelete called for:', transactionId);
+
+    const title = 'Eliminar registro';
+    const message = '¿Estás seguro que deseas eliminar este registro? Esta acción no se puede deshacer.';
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`${title}\n\n${message}`);
+      if (confirmed) {
+        (async () => {
+          try {
+            await deleteTransaction(transactionId);
+            refetch();
+          } catch (err: any) {
+            alert(err?.response?.data?.detail || 'No se pudo eliminar el registro.');
+          }
+        })();
+      }
+    } else {
+      Alert.alert(
+        title,
+        message,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteTransaction(transactionId);
+                refetch();
+              } catch (err: any) {
+                Alert.alert('Error', err?.response?.data?.detail || 'No se pudo eliminar el registro.');
+              }
+            },
+          },
+        ]
+      );
+    }
+  }, [refetch]);
 
   const historicalSummary = summary ? {
     ...summary,
@@ -52,7 +101,7 @@ export default function CartolaScreen() {
               <Text style={styles.personalModeText}>Modo personal</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-transaction')}>
             <Ionicons name="add" size={16} color={APP_THEME.components.tabs.activeText} />
             <Text style={styles.addButtonText}>Agregar</Text>
           </TouchableOpacity>
@@ -157,10 +206,19 @@ export default function CartolaScreen() {
         ) : (
           <>
             <PersonalSummaryChart data={incomeVsExpenses} />
-            <MonthAccordion transactions={transactionsList} summary={summary} />
+            <MonthAccordion
+              transactions={transactionsList}
+              summary={summary}
+              onRefresh={refetch}
+              onDelete={handleDelete}
+            />
             <PersonalTotals summary={historicalSummary} />
             <CategoryExpenses distribution={distribution} />
-            <RecentTransactions transactions={transactions} />
+            <RecentTransactions
+              transactions={transactions}
+              onRefresh={refetch}
+              onDelete={handleDelete}
+            />
           </>
         )}
 
@@ -324,7 +382,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#3F2113',
+    backgroundColor: APP_THEME.cards.tip.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
   },

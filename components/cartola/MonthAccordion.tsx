@@ -1,13 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
 import { useState, useMemo } from 'react';
 import { Transaction } from '@/types/transaction';
 import { groupTransactionsByMonth } from '@/services/api/adapters';
+import { updateTransaction } from '@/services/api/transactions';
 
 interface MonthAccordionProps {
   transactions: Transaction[];
   summary?: any;
+  onDelete?: (transactionId: string) => void;
+  onRefresh?: () => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -25,7 +28,43 @@ const formatDate = (dateString: string) => {
   return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
 };
 
-export default function MonthAccordion({ transactions, summary }: MonthAccordionProps) {
+export default function MonthAccordion({ transactions, summary, onDelete, onRefresh }: MonthAccordionProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDesc, setEditDesc] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const startEditing = (item: Transaction) => {
+    setEditingId(item.id);
+    setEditDesc(item.description || '');
+    setEditAmount(String(Math.round(item.amount)));
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditDesc('');
+    setEditAmount('');
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editAmount || parseFloat(editAmount) <= 0) {
+      Alert.alert('Error', 'El monto debe ser mayor a 0');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await updateTransaction(id, {
+        description: editDesc,
+        amount: parseFloat(editAmount)
+      } as any);
+      setEditingId(null);
+      onRefresh?.();
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo actualizar el registro');
+    } finally {
+      setIsSaving(false);
+    }
+  };
   const groupedMonths = useMemo(() => {
     const list: Transaction[] = Array.isArray(transactions)
       ? transactions
@@ -62,7 +101,7 @@ export default function MonthAccordion({ transactions, summary }: MonthAccordion
     return groups;
   }, [transactions, summary]);
 
-  const [expandedId, setExpandedId] = useState<string | null>(groupedMonths[0]?.id || null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
@@ -127,21 +166,77 @@ export default function MonthAccordion({ transactions, summary }: MonthAccordion
                         </Text>
                       </View>
 
-                      {month.details.incomes.map(item => (
-                        <View key={item.id} style={styles.detailItem}>
-                          <View>
-                            <Text style={styles.detailItemName}>{item.description || item.category}</Text>
-                            <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                      {month.details.incomes.map(item => {
+                        const isVirtual = item.id?.startsWith('virtual-');
+                        const isEditing = editingId === item.id;
+
+                        return (
+                          <View key={item.id} style={styles.detailItem}>
+                            <View style={styles.itemLeft}>
+                              {isEditing ? (
+                                <TextInput
+                                  style={styles.inlineInput}
+                                  value={editDesc}
+                                  onChangeText={setEditDesc}
+                                  autoFocus
+                                />
+                              ) : (
+                                <>
+                                  <Text style={styles.detailItemName}>{item.category || 'General'}</Text>
+                                  {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : null}
+                                  <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                                </>
+                              )}
+                            </View>
+                            <View style={styles.detailItemRight}>
+                              {isEditing ? (
+                                <TextInput
+                                  style={[styles.inlineInput, styles.amountInput]}
+                                  value={editAmount}
+                                  onChangeText={v => setEditAmount(v.replace(/[^0-9]/g, ''))}
+                                  keyboardType="numeric"
+                                />
+                              ) : (
+                                <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.income.text }]}>
+                                  +{formatCurrency(item.amount).substring(1)}
+                                </Text>
+                              )}
+
+                              {!isVirtual && (
+                                <View style={styles.actionsRow}>
+                                  {isEditing ? (
+                                    <>
+                                      {isSaving ? (
+                                        <ActivityIndicator size="small" color={APP_THEME.status.success} />
+                                      ) : (
+                                        <TouchableOpacity onPress={() => handleSave(item.id)}>
+                                          <Ionicons name="checkmark-circle" size={22} color={APP_THEME.status.success} />
+                                        </TouchableOpacity>
+                                      )}
+                                      <TouchableOpacity onPress={cancelEditing}>
+                                        <Ionicons name="close-circle-outline" size={22} color={APP_THEME.text.secondary} />
+                                      </TouchableOpacity>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
+                                        <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
+                                      </TouchableOpacity>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => {
+                                        const finalId = item.id || (item as any).transaction_id;
+                                        console.log('[MonthAccordion] Requesting delete for:', finalId);
+                                        onDelete?.(finalId);
+                                      }}>
+                                        <Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} />
+                                      </TouchableOpacity>
+                                    </>
+                                  )}
+                                </View>
+                              )}
+                            </View>
                           </View>
-                          <View style={styles.detailItemRight}>
-                            <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.income.text }]}>
-                              +{formatCurrency(item.amount).substring(1)}
-                            </Text>
-                            <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
-                          </View>
-                        </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   )}
 
@@ -155,21 +250,74 @@ export default function MonthAccordion({ transactions, summary }: MonthAccordion
                         </Text>
                       </View>
 
-                      {month.details.expenses.map(item => (
-                        <View key={item.id} style={styles.detailItem}>
-                          <View>
-                            <Text style={styles.detailItemName}>{item.description || item.category}</Text>
-                            <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                      {month.details.expenses.map(item => {
+                        const isEditing = editingId === item.id;
+
+                        return (
+                          <View key={item.id} style={styles.detailItem}>
+                            <View style={styles.itemLeft}>
+                              {isEditing ? (
+                                <TextInput
+                                  style={styles.inlineInput}
+                                  value={editDesc}
+                                  onChangeText={setEditDesc}
+                                  autoFocus
+                                />
+                              ) : (
+                                <>
+                                  <Text style={styles.detailItemName}>{item.category || 'General'}</Text>
+                                  {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : null}
+                                  <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                                </>
+                              )}
+                            </View>
+                            <View style={styles.detailItemRight}>
+                              {isEditing ? (
+                                <TextInput
+                                  style={[styles.inlineInput, styles.amountInput]}
+                                  value={editAmount}
+                                  onChangeText={v => setEditAmount(v.replace(/[^0-9]/g, ''))}
+                                  keyboardType="numeric"
+                                />
+                              ) : (
+                                <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.expense.text }]}>
+                                  -{formatCurrency(item.amount).substring(1)}
+                                </Text>
+                              )}
+
+                              <View style={styles.actionsRow}>
+                                {isEditing ? (
+                                  <>
+                                    {isSaving ? (
+                                      <ActivityIndicator size="small" color={APP_THEME.status.success} />
+                                    ) : (
+                                      <TouchableOpacity onPress={() => handleSave(item.id)}>
+                                        <Ionicons name="checkmark-circle" size={22} color={APP_THEME.status.success} />
+                                      </TouchableOpacity>
+                                    )}
+                                    <TouchableOpacity onPress={cancelEditing}>
+                                      <Ionicons name="close-circle-outline" size={22} color={APP_THEME.text.secondary} />
+                                    </TouchableOpacity>
+                                  </>
+                                ) : (
+                                  <>
+                                    <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
+                                      <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.actionButton} onPress={() => {
+                                      const finalId = item.id || (item as any).transaction_id;
+                                      console.log('[MonthAccordion] Requesting delete for:', finalId);
+                                      onDelete?.(finalId);
+                                    }}>
+                                      <Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} />
+                                    </TouchableOpacity>
+                                  </>
+                                )}
+                              </View>
+                            </View>
                           </View>
-                          <View style={styles.detailItemRight}>
-                            <Text style={[styles.detailItemAmount, { color: APP_THEME.cards.expense.text }]}>
-                              -{formatCurrency(item.amount).substring(1)}
-                            </Text>
-                            <TouchableOpacity style={styles.actionButton}><Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} /></TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton}><Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} /></TouchableOpacity>
-                          </View>
-                        </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   )}
 
@@ -276,10 +424,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  itemLeft: {
+    flex: 1,
+    marginRight: 8,
+  },
   detailItemName: {
     color: APP_THEME.text.primary,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  detailItemDescription: {
+    color: APP_THEME.text.secondary,
+    fontSize: 12,
     marginBottom: 2,
   },
   detailItemDate: {
@@ -298,5 +455,25 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 4,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inlineInput: {
+    color: APP_THEME.text.primary,
+    fontSize: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: APP_THEME.card.border,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: APP_THEME.text.secondary + '40',
+  },
+  amountInput: {
+    width: 80,
+    textAlign: 'right',
+    fontWeight: 'bold',
   },
 });

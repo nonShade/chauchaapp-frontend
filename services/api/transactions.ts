@@ -1,5 +1,14 @@
 import apiClient from './apiClient';
-import { Transaction, SummaryResponse, IncomeExpenseData, DistributionData } from '../../types/transaction';
+import {
+  Transaction,
+  SummaryResponse,
+  IncomeExpenseData,
+  DistributionData,
+  TransactionType,
+  TransactionCategory,
+  TransactionFrequency,
+  CreateTransactionPayload
+} from '../../types/transaction';
 import { adaptIncomeVsExpenses, adaptDistribution, adaptSummary } from './adapters';
 
 export const getSummary = async (): Promise<SummaryResponse> => {
@@ -30,8 +39,23 @@ export const getDistribution = async (): Promise<DistributionData[]> => {
   return adaptDistribution(response.data || []);
 };
 
-export const createTransaction = async (data: Omit<Transaction, 'id'>): Promise<Transaction> => {
+export const createTransaction = async (data: CreateTransactionPayload): Promise<Transaction> => {
   const response = await apiClient.post('/transactions', data);
+  return response.data;
+};
+
+export const getTransactionTypes = async (): Promise<TransactionType[]> => {
+  const response = await apiClient.get('/transactions/types');
+  return response.data;
+};
+
+export const getTransactionCategories = async (): Promise<TransactionCategory[]> => {
+  const response = await apiClient.get('/transactions/categories');
+  return response.data;
+};
+
+export const getTransactionFrequencies = async (): Promise<TransactionFrequency[]> => {
+  const response = await apiClient.get('/transactions/frequencies');
   return response.data;
 };
 
