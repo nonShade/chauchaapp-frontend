@@ -19,6 +19,7 @@ import { createTransaction } from '@/services/api/transactions';
 export default function NewTransactionScreen() {
   const [isGasto, setIsGasto] = useState(true);
   const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState(''); // Nueva categoría
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -28,8 +29,14 @@ export default function NewTransactionScreen() {
       return;
     }
 
+    if (!category) {
+      setErrorMsg('Por favor, selecciona una categoría.');
+      return;
+    }
+
     const payload = {
       amount: parseFloat(amount),
+      category_name: category,
       transaction_type_id: isGasto ? 'b9fe72a5-c519-4d16-b99b-7ffd18ec61ab' : '3d43d395-866d-4952-b88d-e64e9e03d406',
       transaction_date: new Date().toISOString(),
     };
@@ -65,6 +72,8 @@ export default function NewTransactionScreen() {
             onTypeChange={setIsGasto}
             amount={amount}
             onAmountChange={setAmount}
+            selectedCategory={category}
+            onCategoryChange={setCategory}
           />
 
           {errorMsg && (

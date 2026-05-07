@@ -5,14 +5,25 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { APP_THEME } from '@/constants/themes';
+
+const GASTO_CATEGORIES = [
+  'Vivienda', 'Alimentación', 'Transporte', 'Servicios',
+  'Salud', 'Entretenimiento', 'Educación', 'Vestuario',
+  'Créditos', 'Ahorro', 'Otros'
+];
+
+const INGRESO_CATEGORIES = ['Sueldo', 'Venta', 'Inversión', 'Otros'];
 
 interface NewTransactionFormProps {
   isGasto: boolean;
   onTypeChange: (isGasto: boolean) => void;
   amount: string;
   onAmountChange: (value: string) => void;
+  selectedCategory: string;
+  onCategoryChange: (category: string) => void;
 }
 
 export default function NewTransactionForm({
@@ -20,8 +31,11 @@ export default function NewTransactionForm({
   onTypeChange,
   amount,
   onAmountChange,
+  selectedCategory,
+  onCategoryChange,
 }: NewTransactionFormProps) {
   const activeColor = isGasto ? APP_THEME.status.error : APP_THEME.status.success;
+  const categories = isGasto ? GASTO_CATEGORIES : INGRESO_CATEGORIES;
 
   return (
     <View style={styles.container}>
@@ -58,9 +72,32 @@ export default function NewTransactionForm({
             keyboardType="numeric"
             placeholder="0"
             placeholderTextColor={activeColor + '40'}
-            autoFocus
           />
         </View>
+      </View>
+
+      {/* Selector de Categoría */}
+      <View style={styles.inputSection}>
+        <Text style={styles.label}>Categoría (Obligatorio)</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.categoryButton,
+                selectedCategory === cat && { backgroundColor: activeColor, borderColor: activeColor }
+              ]}
+              onPress={() => onCategoryChange(cat)}
+            >
+              <Text style={[
+                styles.categoryText,
+                selectedCategory === cat && { color: '#fff' }
+              ]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
@@ -116,5 +153,22 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     padding: 0,
+  },
+  categoryScroll: {
+    gap: 10,
+    paddingRight: 20,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: APP_THEME.input.border,
+    backgroundColor: APP_THEME.input.background,
+  },
+  categoryText: {
+    color: APP_THEME.text.secondary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
