@@ -4,7 +4,8 @@ import {
   getTransactionsHistory,
   getIncomeVsExpenses,
   getDistribution,
-  getTransactionCategories
+  getTransactionCategories,
+  getTransactionTypes
 } from '../services/api/transactions';
 import {
   SummaryResponse,
@@ -46,13 +47,14 @@ function normalizeToOfficialCategory(tx: any, categoryMap: Record<string, string
   return found || 'Otros';
 }
 
-function buildDistributionFromTransactions(txList: any[], totalExpense: number, catLookup: Record<string, string>): DistributionData[] {
+function buildDistributionFromTransactions(txList: any[], totalExpense: number, catLookup: Record<string, string>, typeLookup: Record<string, 'INCOME' | 'EXPENSE'>): DistributionData[] {
   const categorySummaryMap: Record<string, { name: string; amount: number }> = {};
 
   txList.forEach((tx: any) => {
     try {
       const { normalizeTransaction } = require('../services/api/adapters');
-      const normalized = normalizeTransaction(tx);
+      const normalized = normalizeTransaction(tx, typeLookup);
+
       if (normalized.type !== 'EXPENSE') return;
 
       const catName = normalizeToOfficialCategory(tx, catLookup);
@@ -96,14 +98,31 @@ export function useCartolaData() {
         transactionsData,
         incomeVsExpensesData,
         distributionData,
-        categoriesData
+        categoriesData,
+        typesData
       ] = await Promise.all([
         getSummary(),
         getTransactionsHistory(),
         getIncomeVsExpenses(),
         getDistribution(),
-        getTransactionCategories()
+        getTransactionCategories(),
+        getTransactionTypes()
       ]);
+
+      const typeLookup: Record<string, 'INCOME' | 'EXPENSE'> = {};
+      if (Array.isArray(typesData)) {
+        typesData.forEach((t: any) => {
+          const id = t.id || t.transaction_type_id;
+          const name = (t.name || '').toLowerCase();
+          if (id) {
+            if (name.includes('ingreso') || name.includes('income')) {
+              typeLookup[id] = 'INCOME';
+            } else {
+              typeLookup[id] = 'EXPENSE';
+            }
+          }
+        });
+      }
 
       const catLookup: Record<string, string> = {};
       if (Array.isArray(categoriesData)) {
@@ -121,24 +140,24 @@ export function useCartolaData() {
       let incomeAcc = 0;
       let expenseAcc = 0;
 
-      txList.forEach((tx: any) => {
-        try {
-          const { normalizeTransaction } = require('../services/api/adapters');
-          const normalized = normalizeTransaction(tx);
-          if (normalized.type === 'INCOME') {
-            balanceAcc += normalized.amount;
-            incomeAcc += normalized.amount;
-          } else {
-            balanceAcc -= normalized.amount;
-            expenseAcc += normalized.amount;
-          }
-        } catch (_) { }
+      const { normalizeTransaction } = require('../services/api/adapters');
+
+      const normalizedTransactions = txList.map((tx: any) => {
+        const normalized = normalizeTransaction(tx, typeLookup);
+        if (normalized.type === 'INCOME') {
+          balanceAcc += normalized.amount;
+          incomeAcc += normalized.amount;
+        } else {
+          balanceAcc -= normalized.amount;
+          expenseAcc += normalized.amount;
+        }
+        return normalized;
       });
 
-      const finalDistribution = buildDistributionFromTransactions(txList, expenseAcc, catLookup);
+      const finalDistribution = buildDistributionFromTransactions(txList, expenseAcc, catLookup, typeLookup);
 
       setSummary(summaryData);
-      setTransactions(transactionsData);
+      setTransactions(normalizedTransactions);
       setCalculatedBalance(balanceAcc);
       setCalculatedIncome(incomeAcc);
       setCalculatedExpense(expenseAcc);

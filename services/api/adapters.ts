@@ -39,8 +39,6 @@ export const adaptDistribution = (raw: any): DistributionData[] => {
   const items: any[] = Array.isArray(raw) ? raw : (raw?.data || []);
   const colors = APP_THEME.cards.categories;
 
-  console.log('[DEBUG] adaptDistribution items:', JSON.stringify(items));
-
   return items.map((item: any, index: number) => ({
     category: item.category_name || 'Sin categoría',
     amount: parseFloat(item.total_amount) || 0,
@@ -49,28 +47,41 @@ export const adaptDistribution = (raw: any): DistributionData[] => {
   }));
 };
 
-export const normalizeTransaction = (t: any): Transaction => {
+export const normalizeTransaction = (t: any, typeLookup: Record<string, 'INCOME' | 'EXPENSE'> = {}): Transaction => {
   const dateStr = t.transaction_date || t.date || new Date().toISOString();
-  const date = new Date(dateStr);
-  const validDate = isNaN(date.getTime()) ? new Date() : date;
 
   const amount = Math.abs(parseFloat(t.amount)) || 0;
   const description = (t.description || '').toLowerCase();
 
-  const typeName = (t.transaction_type?.name || t.type_name || t.category || '').toLowerCase();
+  const typeId = t.transaction_type_id || t.type_id || '';
+  let finalType: 'INCOME' | 'EXPENSE' = typeLookup[typeId] || 'EXPENSE';
 
-  const isIncome =
-    typeName.includes('ingreso') ||
-    t.type === 'INCOME' ||
-    description.includes('sueldo') ||
-    description.includes('abono');
+  if (!typeLookup[typeId]) {
+    const typeName = (
+      t.transaction_type?.name ||
+      t.type_name ||
+      (t.transaction_type && typeof t.transaction_type === 'string' ? t.transaction_type : '') ||
+      t.type ||
+      t.category ||
+      ''
+    ).toUpperCase();
+
+    const isIncome =
+      typeName.includes('INGRESO') ||
+      typeName.includes('INCOME') ||
+      description.includes('sueldo') ||
+      description.includes('abono') ||
+      description.includes('pago recibido');
+
+    if (isIncome) finalType = 'INCOME';
+  }
 
   return {
     ...t,
     id: t.transaction_id || t.id || Math.random().toString(),
     amount: amount,
     date: dateStr,
-    type: isIncome ? 'INCOME' : 'EXPENSE',
+    type: finalType,
     description: t.description || 'Sin descripción'
   } as Transaction;
 };

@@ -67,15 +67,15 @@ export default function NewTransactionScreen() {
 
         const gastoType = types.find(t => {
           const n = t.name.toLowerCase();
-          return n.includes('gasto') || n.includes('egreso') || n.includes('expense');
+          return n === 'gasto' || n === 'egreso' || n === 'expense' || n.includes('gasto');
         });
         const ingresoType = types.find(t => {
           const n = t.name.toLowerCase();
-          return n.includes('ingreso') || n.includes('income');
+          return n === 'ingreso' || n === 'income' || n.includes('ingreso');
         });
 
-        if (gastoType) setGastoTypeId(gastoType.id ?? gastoType.transaction_type_id ?? '');
-        if (ingresoType) setIngresoTypeId(ingresoType.id ?? ingresoType.transaction_type_id ?? '');
+        if (gastoType) setGastoTypeId(gastoType.id || gastoType.transaction_type_id || '');
+        if (ingresoType) setIngresoTypeId(ingresoType.id || ingresoType.transaction_type_id || '');
 
         if (!gastoType || !ingresoType) {
           console.warn('[NewTransaction] No se encontraron tipos. Tipos recibidos:', types.map(t => t.name));
@@ -304,7 +304,11 @@ export default function NewTransactionScreen() {
 
           {/* Save */}
           <TouchableOpacity
-            style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
+            style={[
+              styles.saveButton, 
+              { backgroundColor: isGasto ? APP_THEME.status.error : APP_THEME.status.success },
+              isSaving && { opacity: 0.7 }
+            ]}
             onPress={handleSubmit}
             disabled={isSaving}
           >
