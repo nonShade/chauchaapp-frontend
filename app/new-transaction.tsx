@@ -1,31 +1,169 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, ActivityIndicator, Platform,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
 import NewTransactionForm from '@/components/transaction/NewTransactionForm';
-import { createTransaction } from '@/services/api/transactions';
+import {
+  getTransactionTypes,
+  getTransactionCategories,
+  getTransactionFrequencies,
+  createTransaction,
+  updateTransaction,
+} from '@/services/api/transactions';
+import { LocalTransactionType, LocalFrequency } from '@/types/transaction';
+
+const todayISO = () => new Date().toISOString().split('T')[0];
+
+const formatDateDisplay = (iso: string) => {
+  const [y, m, d] = iso.split('-');
+  return `${d} / ${m} / ${y}`;
+};
 
 export default function NewTransactionScreen() {
-  const [isGasto, setIsGasto] = useState(true);
+  const { id: editId, mode } = useLocalSearchParams<{ id?: string; mode?: string }>();
+  const isEditMode = mode === 'edit' && !!editId;
+
+  const [gastoTypeId, setGastoTypeId] = useState('');
+  const [ingresoTypeId, setIngresoTypeId] = useState('');
+  const [onceFreqId, setOnceFreqId] = useState('');
+  const [monthlyFreqId, setMonthlyFreqId] = useState('');
+  const [categoryUUIDs, setCategoryUUIDs] = useState<Record<string, string>>({});
+  const [categoryNames, setCategoryNames] = useState<Record<string, string>>({});
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  const [type, setType] = useState<LocalTransactionType>('gasto');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(''); // Nueva categoría
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [date] = useState(todayISO());
+  const [frequency, setFrequency] = useState<LocalFrequency>('once');
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const isGasto = type === 'gasto';
+  const pageTitle = isEditMode ? 'Editar registro' : 'Nuevo registro';
+  const subtitle = isGasto
+    ? (isEditMode ? 'Edita el gasto' : 'Registra un gasto')
+    : (isEditMode ? 'Edita el ingreso' : 'Registra un ingreso');
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [types, cats, freqs] = await Promise.all([
+          getTransactionTypes(),
+          getTransactionCategories(),
+          getTransactionFrequencies(),
+        ]);
+
+        console.log('[NewTransaction] types:', JSON.stringify(types));
+        console.log('[NewTransaction] freqs:', JSON.stringify(freqs));
+        console.log('[NewTransaction] cats:', JSON.stringify(cats));
+
+        const gastoType = types.find(t => {
+          const n = t.name.toLowerCase();
+          return n.includes('gasto') || n.includes('egreso') || n.includes('expense');
+        });
+        const ingresoType = types.find(t => {
+          const n = t.name.toLowerCase();
+          return n.includes('ingreso') || n.includes('income');
+        });
+
+        if (gastoType) setGastoTypeId(gastoType.id ?? gastoType.transaction_type_id ?? '');
+        if (ingresoType) setIngresoTypeId(ingresoType.id ?? ingresoType.transaction_type_id ?? '');
+
+        if (!gastoType || !ingresoType) {
+          console.warn('[NewTransaction] No se encontraron tipos. Tipos recibidos:', types.map(t => t.name));
+        }
+
+        const onceFreq = freqs.find(f =>
+          f.name.toLowerCase().includes('única') ||
+          f.name.toLowerCase().includes('unica') ||
+          f.name.toLowerCase().includes('vez') ||
+          f.name.toLowerCase().includes('once') ||
+          f.name.toLowerCase().includes('única')
+        ) || freqs[0];
+        const monthlyFreq = freqs.find(f =>
+          f.name.toLowerCase().includes('mensual') ||
+          f.name.toLowerCase().includes('monthly')
+        );
+        if (onceFreq) setOnceFreqId(onceFreq.id ?? onceFreq.transaction_frequency_id ?? '');
+        if (monthlyFreq) setMonthlyFreqId(monthlyFreq.id ?? monthlyFreq.transaction_frequency_id ?? '');
+
+        const map: Record<string, string> = {};
+        const nameMap: Record<string, string> = {};
+        cats.forEach(c => {
+          const catId = c.id ?? c.transaction_category_id ?? '';
+          if (catId) {
+            map[c.name.toLowerCase()] = catId;
+            nameMap[catId] = c.name;
+          }
+        });
+        setCategoryUUIDs(map);
+        setCategoryNames(nameMap);
+      } catch (e: any) {
+        console.error('[NewTransaction] Error cargando datos:', e?.response?.data ?? e?.message ?? e);
+        setLoadError('No se pudieron cargar los datos del formulario. Verifica tu conexión.');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!isEditMode || isLoadingData) return;
+    const loadEditData = async () => {
+      try {
+        const { default: apiClient } = await import('@/services/api/apiClient');
+        const res = await apiClient.get(`/transactions/individual/${editId}`);
+        const tx = res.data;
+        console.log('[EditMode] raw tx:', JSON.stringify(tx));
+
+        const txAmount = Math.abs(parseFloat(tx.amount || tx.transaction_amount || 0));
+        setAmount(String(Math.round(txAmount)));
+
+        if (tx.description) setDescription(tx.description);
+
+        const typeName = (tx.transaction_type?.name || tx.type_name || '').toLowerCase();
+        const isIncome = typeName.includes('ingreso') || typeName.includes('income') || tx.type === 'INCOME';
+        setType(isIncome ? 'ingreso' : 'gasto');
+
+        const catId = tx.transaction_category_id || tx.category_id;
+        if (catId && categoryNames[catId]) {
+          setCategory(categoryNames[catId]);
+        }
+
+        const freqId = tx.transaction_frequency_id || tx.frequency_id;
+        if (freqId) {
+          setFrequency(freqId === monthlyFreqId ? 'monthly' : 'once');
+        }
+      } catch (e: any) {
+        console.warn('[EditMode] Could not load transaction:', e?.response?.data ?? e?.message);
+      }
+    };
+    loadEditData();
+  }, [isEditMode, isLoadingData, editId, categoryNames, monthlyFreqId]);
+
+  const handleTypeChange = useCallback((newType: LocalTransactionType) => {
+    setType(newType);
+    setCategory('');
+  }, []);
 
   const handleSubmit = async () => {
+    setErrorMsg('');
     if (!amount || parseFloat(amount) <= 0) {
-      setErrorMsg('Por favor, ingresa un monto válido.');
+      setErrorMsg('Ingresa un monto válido mayor a $0.');
+      return;
+    }
+    const typeId = isGasto ? gastoTypeId : ingresoTypeId;
+    if (!typeId) {
+      setErrorMsg('No se pudo identificar el tipo de transacción.');
       return;
     }
 
@@ -34,69 +172,152 @@ export default function NewTransactionScreen() {
       return;
     }
 
+    const categoryId = categoryUUIDs[category.toLowerCase()];
+    const frequencyId = frequency === 'monthly' ? monthlyFreqId : onceFreqId;
+
     const payload = {
       amount: parseFloat(amount),
-      category_name: category,
-      transaction_type_id: isGasto ? 'b9fe72a5-c519-4d16-b99b-7ffd18ec61ab' : '3d43d395-866d-4952-b88d-e64e9e03d406',
-      transaction_date: new Date().toISOString(),
+      transaction_type_id: typeId,
+      ...(categoryId ? { transaction_category_id: categoryId } : {}),
+      ...(frequencyId ? { transaction_frequency_id: frequencyId } : {}),
+      ...(description.trim() ? { description: description.trim() } : {}),
+      transaction_date: date,
     };
 
     try {
       setIsSaving(true);
-      await createTransaction(payload as any);
+      if (isEditMode && editId) {
+        await updateTransaction(editId, payload);
+      } else {
+        await createTransaction(payload);
+      }
       router.back();
     } catch (err: any) {
-      setErrorMsg('Error al guardar. Intenta nuevamente.');
+      const detail = err?.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setErrorMsg(detail.map((d: any) => d.msg).join('. '));
+      } else {
+        setErrorMsg('Error al guardar. Intenta nuevamente.');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (isLoadingData) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator size="large" color={APP_THEME.cards.income.text} style={{ flex: 1 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Ionicons name="cloud-offline-outline" size={48} color={APP_THEME.status.alerts.errorText} />
+          <Text style={{ color: APP_THEME.status.alerts.errorText, textAlign: 'center', marginTop: 16, fontSize: 15 }}>
+            {loadError}
+          </Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 24 }}>
+            <Text style={{ color: APP_THEME.cards.income.text, fontWeight: '600' }}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // UI
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={APP_THEME.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Nuevo Registro</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={22} color={APP_THEME.text.primary} />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.title}>{pageTitle}</Text>
+              <Text style={styles.subtitle}>{subtitle}</Text>
+            </View>
+          </View>
+
+          {/* Toggle Gasto / Ingreso */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, isGasto && styles.toggleBtnActive]}
+              onPress={() => handleTypeChange('gasto')}
+            >
+              <Ionicons
+                name="trending-down-outline"
+                size={17}
+                color={isGasto ? APP_THEME.cards.expense.text : APP_THEME.text.secondary}
+              />
+              <Text style={[styles.toggleText, { color: isGasto ? APP_THEME.cards.expense.text : APP_THEME.text.secondary }]}>
+                Gasto
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.toggleBtn, !isGasto && styles.toggleBtnActive]}
+              onPress={() => handleTypeChange('ingreso')}
+            >
+              <Ionicons
+                name="trending-up-outline"
+                size={17}
+                color={!isGasto ? APP_THEME.cards.income.text : APP_THEME.text.secondary}
+              />
+              <Text style={[styles.toggleText, { color: !isGasto ? APP_THEME.cards.income.text : APP_THEME.text.secondary }]}>
+                Ingreso
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Form unified */}
           <NewTransactionForm
-            isGasto={isGasto}
-            onTypeChange={setIsGasto}
-            amount={amount}
-            onAmountChange={setAmount}
+            type={type}
             selectedCategory={category}
             onCategoryChange={setCategory}
+            amount={amount}
+            onAmountChange={setAmount}
+            description={description}
+            onDescriptionChange={setDescription}
+            date={date}
+            formattedDate={formatDateDisplay(date)}
+            frequency={frequency}
+            onFrequencyChange={setFrequency}
           />
 
-          {errorMsg && (
+          {/* Error */}
+          {!!errorMsg && (
             <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={20} color={APP_THEME.status.alerts.errorText} />
+              <Ionicons name="alert-circle-outline" size={16} color={APP_THEME.status.alerts.errorText} />
               <Text style={styles.errorText}>{errorMsg}</Text>
             </View>
           )}
 
+          {/* Save */}
           <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: isGasto ? APP_THEME.status.error : APP_THEME.status.success }]}
+            style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={isSaving}
           >
             {isSaving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Ionicons name="checkmark-sharp" size={20} color="#fff" />
-                <Text style={styles.saveButtonText}>Guardar Registro</Text>
+                <Ionicons name="checkmark" size={20} color="#fff" />
+                <Text style={styles.saveButtonText}>Guardar registro</Text>
               </>
             )}
           </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -108,31 +329,66 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: APP_THEME.background.primary,
   },
+  container: { flex: 1 },
+  content: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 24,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: APP_THEME.input.border,
+    gap: 16,
+    marginTop: 8,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: APP_THEME.card.background,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     color: APP_THEME.text.primary,
   },
-  container: {
-    flex: 1,
+  subtitle: {
+    fontSize: 13,
+    color: APP_THEME.text.secondary,
+    marginTop: 2,
   },
-  content: {
-    padding: 20,
-    gap: 30,
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: APP_THEME.components.tabs.inactiveBg,
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  toggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  toggleBtnActive: {
+    backgroundColor: APP_THEME.background.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toggleText: {
+    fontWeight: '600',
+    fontSize: 14,
   },
   errorContainer: {
     flexDirection: 'row',
@@ -151,6 +407,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: APP_THEME.cards.income.text,
     borderRadius: 14,
     paddingVertical: 18,
     gap: 10,
