@@ -72,32 +72,6 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
 
     const groups = groupTransactionsByMonth(list);
 
-    if (summary && groups.length > 0) {
-      const now = new Date();
-      const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
-      const currentMonthGroup = groups.find(g => g.id === currentMonthKey);
-
-      if (currentMonthGroup) {
-        const backendIncome = Number(summary.total_income) || 0;
-        const listIncome = currentMonthGroup.details.incomeAmount;
-
-        if (backendIncome > listIncome) {
-          const diff = backendIncome - listIncome;
-          currentMonthGroup.details.incomes.push({
-            id: 'virtual-income-' + currentMonthKey,
-            description: 'Ingresos registrados',
-            amount: diff,
-            type: 'INCOME',
-            date: now.toISOString(),
-            category: 'General'
-          } as Transaction);
-          currentMonthGroup.details.incomeAmount = backendIncome;
-          currentMonthGroup.amount = backendIncome - currentMonthGroup.details.expenseAmount;
-          currentMonthGroup.isPositive = currentMonthGroup.amount >= 0;
-        }
-      }
-    }
-
     return groups;
   }, [transactions, summary]);
 
@@ -181,11 +155,11 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                   autoFocus
                                 />
                               ) : (
-                                <>
-                                  <Text style={styles.detailItemName}>{item.category || 'General'}</Text>
-                                  {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : null}
-                                  <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
-                                </>
+                                  <>
+                                    <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Ingreso')}</Text>
+                                    {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
+                                    <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                                  </>
                               )}
                             </View>
                             <View style={styles.detailItemRight}>
@@ -264,11 +238,11 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                   autoFocus
                                 />
                               ) : (
-                                <>
-                                  <Text style={styles.detailItemName}>{item.category || 'General'}</Text>
-                                  {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : null}
-                                  <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
-                                </>
+                                  <>
+                                    <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Gasto')}</Text>
+                                    {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
+                                    <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
+                                  </>
                               )}
                             </View>
                             <View style={styles.detailItemRight}>

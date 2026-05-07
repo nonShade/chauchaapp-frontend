@@ -61,11 +61,9 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
       setIsSaving(false);
     }
   };
-  const rawList = Array.isArray(transactions)
+  const list = Array.isArray(transactions)
     ? transactions
     : (transactions as any)?.data ?? [];
-
-  const list = rawList.map(normalizeTransaction);
 
   return (
     <View style={styles.container}>
@@ -103,7 +101,7 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
                       />
                     ) : (
                       <>
-                        <Text style={styles.itemName}>{item.category || 'General'}</Text>
+                        <Text style={styles.itemName}>{item.category || (item as any).category_name || 'Otros'}</Text>
                         {item.description ? <Text style={styles.itemDescription}>{item.description}</Text> : null}
                         <View style={styles.dateRow}>
                           <Ionicons name="calendar-outline" size={10} color={APP_THEME.text.secondary} />
@@ -124,9 +122,9 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
                   ) : (
                     <Text style={[
                       styles.itemAmount,
-                      { color: item.type === 'INCOME' ? APP_THEME.cards.income.text : APP_THEME.text.primary }
+                      { color: item.type === 'INCOME' ? APP_THEME.status.success : APP_THEME.text.primary }
                     ]}>
-                      {item.type === 'INCOME' ? '+' : '-'}{formatCurrency(item.amount)}
+                      {item.type === 'INCOME' ? '+ ' : '- '}{formatCurrency(item.amount)}
                     </Text>
                   )}
 
