@@ -18,7 +18,8 @@ import { APP_THEME } from '../constants/themes';
 const OFFICIAL_CATEGORIES = [
   'Vivienda', 'Alimentación', 'Transporte', 'Servicios',
   'Salud', 'Entretenimiento', 'Educación', 'Vestuario',
-  'Créditos', 'Ahorro', 'Otros'
+  'Créditos', 'Ahorro', 'Otros',
+  'Sueldo', 'Freelance', 'Bonificacion', 'Inversiones'
 ];
 
 function removeAccents(str: string): string {
@@ -144,6 +145,9 @@ export function useCartolaData() {
 
       const normalizedTransactions = txList.map((tx: any) => {
         const normalized = normalizeTransaction(tx, typeLookup);
+
+        normalized.category = normalizeToOfficialCategory(tx, catLookup);
+
         if (normalized.type === 'INCOME') {
           balanceAcc += normalized.amount;
           incomeAcc += normalized.amount;
