@@ -28,3 +28,44 @@ export interface DistributionData {
   percentage: number;
   color?: string;
 }
+
+export interface TransactionType {
+  id?: string;
+  transaction_type_id?: string;
+  name: string;
+}
+
+export interface TransactionCategory {
+  id?: string;
+  transaction_category_id?: string;
+  name: string;
+  transaction_type_id?: string;
+}
+
+export interface TransactionFrequency {
+  id?: string;
+  transaction_frequency_id?: string;
+  name: string;
+}
+
+export interface CreateTransactionPayload {
+  amount: number;
+  transaction_type_id: string;
+  transaction_category_id?: string;
+  transaction_frequency_id?: string;
+  description?: string;
+  transaction_date: string;
+}
+
+export type LocalTransactionType = 'gasto' | 'ingreso';
+export type LocalFrequency = 'once' | 'monthly';
+
+export interface TransactionFormData {
+  type: LocalTransactionType;
+  amount: string;
+  category: string;
+  description: string;
+  date: string;
+  frequency: LocalFrequency;
+}
+
