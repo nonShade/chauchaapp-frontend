@@ -25,13 +25,48 @@ const MONTH_NAMES_SHORT: Record<string, string> = {
 };
 
 export const adaptIncomeVsExpenses = (raw: any[]): IncomeExpenseData => {
+  const dataMap: Record<string, { income: number; expense: number }> = {};
+  raw.forEach(item => {
+    const key = item.month;
+    if (key) {
+      dataMap[key] = {
+        income: parseFloat(item.income) || 0,
+        expense: parseFloat(item.expenses) || 0,
+      };
+    }
+  });
+
+  const keys = Object.keys(dataMap).sort();
+  if (keys.length === 0) {
+    return { labels: [], income: [], expense: [] };
+  }
+
+  const firstKey = keys[0];
+  const now = new Date();
+  const lastKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const result: { key: string; label: string; income: number; expense: number }[] = [];
+  const [startYear, startMonth] = firstKey.split('-').map(Number);
+  const [endYear, endMonth] = lastKey.split('-').map(Number);
+
+  let y = startYear;
+  let m = startMonth;
+
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    const monthNum = String(m).padStart(2, '0');
+    const label = MONTH_NAMES_SHORT[monthNum] || key;
+    const entry = dataMap[key] ?? { income: 0, expense: 0 };
+    result.push({ key, label, income: entry.income, expense: entry.expense });
+
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+
   return {
-    labels: raw.map(item => {
-      const monthNum = item.month?.split('-')[1] || '';
-      return MONTH_NAMES_SHORT[monthNum] || item.month;
-    }),
-    income: raw.map(item => parseFloat(item.income) || 0),
-    expense: raw.map(item => parseFloat(item.expenses) || 0),
+    labels: result.map(r => r.label),
+    income: result.map(r => r.income),
+    expense: result.map(r => r.expense),
   };
 };
 
