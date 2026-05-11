@@ -77,7 +77,7 @@ export default function LoginScreen() {
     if (emailErr || passErr) return;
 
     try {
-      const response = await fetch("http://localhost:8000/v1/auth/login", {
+      const response = await fetch("http://localhost:8001/v1/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -348,10 +348,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 5,
   },
   formTitle: {
