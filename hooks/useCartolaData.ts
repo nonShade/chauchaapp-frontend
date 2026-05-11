@@ -3,7 +3,9 @@ import {
   getSummary,
   getTransactionsHistory,
   getIncomeVsExpenses,
-  getDistribution
+  getDistribution,
+  getTransactionCategories,
+  getTransactionTypes
 } from '../services/api/transactions';
 import {
   SummaryResponse,
@@ -13,44 +15,60 @@ import {
 } from '../types/transaction';
 import { APP_THEME } from '../constants/themes';
 
-//Helpers para el fallback local
-
-const MONTHS = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+const OFFICIAL_CATEGORIES = [
+  'Vivienda', 'Alimentación', 'Transporte', 'Servicios',
+  'Salud', 'Entretenimiento', 'Educación', 'Vestuario',
+  'Créditos', 'Ahorro', 'Otros',
+  'Sueldo', 'Freelance', 'Bonificacion', 'Inversiones'
 ];
 
-function cleanCategoryName(description: string): string {
-  let clean = description.toLowerCase();
-  MONTHS.forEach(m => { clean = clean.replace(m, '').trim(); });
-  return clean.charAt(0).toUpperCase() + clean.slice(1);
+function removeAccents(str: string): string {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
-function buildDistributionFromTransactions(txList: any[], totalExpense: number): DistributionData[] {
-  const categoryMap: Record<string, { name: string; amount: number }> = {};
+function normalizeToOfficialCategory(tx: any, categoryMap: Record<string, string> = {}): string {
+  const catId = tx.transaction_category_id || tx.category_id || '';
+  let catName = categoryMap[catId] || '';
+
+  if (!catName) {
+    catName = tx.transaction_category?.name || tx.category_name || tx.category?.name || tx.category || '';
+  }
+
+  if (!catName) return 'Otros';
+
+  const normalizedInput = removeAccents(catName);
+
+  const found = OFFICIAL_CATEGORIES.find(c => {
+    const normalizedOfficial = removeAccents(c);
+    return normalizedInput === normalizedOfficial ||
+      normalizedInput.includes(normalizedOfficial) ||
+      normalizedOfficial.includes(normalizedInput);
+  });
+
+  return found || 'Otros';
+}
+
+function buildDistributionFromTransactions(txList: any[], totalExpense: number, catLookup: Record<string, string>, typeLookup: Record<string, 'INCOME' | 'EXPENSE'>): DistributionData[] {
+  const categorySummaryMap: Record<string, { name: string; amount: number }> = {};
 
   txList.forEach((tx: any) => {
     try {
       const { normalizeTransaction } = require('../services/api/adapters');
-      const normalized = normalizeTransaction(tx);
+      const normalized = normalizeTransaction(tx, typeLookup);
+
       if (normalized.type !== 'EXPENSE') return;
 
-      const catId = tx.transaction_category_id || tx.transaction_type_id || 'sin-categoria';
+      const catName = normalizeToOfficialCategory(tx, catLookup);
 
-      const catName =
-        tx.transaction_category?.name ||
-        tx.category_name ||
-        cleanCategoryName(tx.description || 'Otros');
-
-      if (!categoryMap[catId]) {
-        categoryMap[catId] = { name: catName, amount: 0 };
+      if (!categorySummaryMap[catName]) {
+        categorySummaryMap[catName] = { name: catName, amount: 0 };
       }
-      categoryMap[catId].amount += normalized.amount;
+      categorySummaryMap[catName].amount += normalized.amount;
     } catch (_) { }
   });
 
   const colors = APP_THEME.cards.categories;
-  return Object.values(categoryMap)
+  return Object.values(categorySummaryMap)
     .sort((a, b) => b.amount - a.amount)
     .map((cat, idx) => ({
       category: cat.name,
@@ -80,60 +98,94 @@ export function useCartolaData() {
         summaryData,
         transactionsData,
         incomeVsExpensesData,
-        distributionData
+        distributionData,
+        categoriesData,
+        typesData
       ] = await Promise.all([
         getSummary(),
         getTransactionsHistory(),
         getIncomeVsExpenses(),
-        getDistribution()
+        getDistribution(),
+        getTransactionCategories(),
+        getTransactionTypes()
       ]);
+
+      const typeLookup: Record<string, 'INCOME' | 'EXPENSE'> = {};
+      if (Array.isArray(typesData)) {
+        typesData.forEach((t: any) => {
+          const id = t.id || t.transaction_type_id;
+          const name = (t.name || '').toLowerCase();
+          if (id) {
+            if (name.includes('ingreso') || name.includes('income')) {
+              typeLookup[id] = 'INCOME';
+            } else {
+              typeLookup[id] = 'EXPENSE';
+            }
+          }
+        });
+      }
+
+      const catLookup: Record<string, string> = {};
+      if (Array.isArray(categoriesData)) {
+        categoriesData.forEach((c: any) => {
+          const id = c.id || c.transaction_category_id;
+          if (id) catLookup[id] = c.name;
+        });
+      }
 
       const txList = Array.isArray(transactionsData)
         ? transactionsData
         : (transactionsData as any)?.data || [];
 
-      console.log('[DEBUG] Raw txList length:', txList.length);
-
       let balanceAcc = 0;
       let incomeAcc = 0;
       let expenseAcc = 0;
-      const localCategories = new Set();
 
-      txList.forEach((tx: any) => {
-        try {
-          const { normalizeTransaction } = require('../services/api/adapters');
-          const normalized = normalizeTransaction(tx);
-          if (normalized.type === 'INCOME') {
-            balanceAcc += normalized.amount;
-            incomeAcc += normalized.amount;
-          } else {
-            balanceAcc -= normalized.amount;
-            expenseAcc += normalized.amount;
+      const { normalizeTransaction } = require('../services/api/adapters');
 
-            const catId = tx.transaction_category_id || tx.transaction_type_id || 'sin-id';
-            localCategories.add(catId);
-          }
-        } catch (_) { }
+      const normalizedTransactions = txList.map((tx: any) => {
+        const normalized = normalizeTransaction(tx, typeLookup);
+
+        normalized.category = normalizeToOfficialCategory(tx, catLookup);
+
+        if (normalized.type === 'INCOME') {
+          balanceAcc += normalized.amount;
+          incomeAcc += normalized.amount;
+        } else {
+          balanceAcc -= normalized.amount;
+          expenseAcc += normalized.amount;
+        }
+        return normalized;
       });
 
-      const apiDistribution = Array.isArray(distributionData) ? distributionData : [];
+      const finalDistribution = buildDistributionFromTransactions(txList, expenseAcc, catLookup, typeLookup);
 
-      const useLocalFallback = apiDistribution.length <= 1 && localCategories.size > apiDistribution.length;
-
-      console.log(`[DEBUG] API Categories: ${apiDistribution.length}, Local Categories detected: ${localCategories.size}`);
-
-      const finalDistribution = useLocalFallback
-        ? buildDistributionFromTransactions(txList, expenseAcc)
-        : apiDistribution;
-
-      console.log('[DEBUG] finalDistribution:', JSON.stringify(finalDistribution));
+      // Calcular income vs expenses de forma local hasta resolver 
+      const monthlyDataMap: Record<string, { income: number, expenses: number }> = {};
+      normalizedTransactions.forEach((tx: any) => {
+        const date = new Date(tx.date);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyDataMap[key]) monthlyDataMap[key] = { income: 0, expenses: 0 };
+        if (tx.type === 'INCOME') {
+          monthlyDataMap[key].income += tx.amount;
+        } else {
+          monthlyDataMap[key].expenses += tx.amount;
+        }
+      });
+      const localRawData = Object.entries(monthlyDataMap).map(([month, data]) => ({
+        month,
+        income: data.income,
+        expenses: data.expenses
+      }));
+      const { adaptIncomeVsExpenses } = require('../services/api/adapters');
+      const localIncomeVsExpensesData = adaptIncomeVsExpenses(localRawData);
 
       setSummary(summaryData);
-      setTransactions(transactionsData);
+      setTransactions(normalizedTransactions);
       setCalculatedBalance(balanceAcc);
       setCalculatedIncome(incomeAcc);
       setCalculatedExpense(expenseAcc);
-      setIncomeVsExpenses(incomeVsExpensesData);
+      setIncomeVsExpenses(localIncomeVsExpensesData);
       setDistribution(finalDistribution);
     } catch (err: any) {
       console.error('Error fetching cartola data:', err);

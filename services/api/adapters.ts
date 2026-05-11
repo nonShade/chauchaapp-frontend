@@ -25,21 +25,54 @@ const MONTH_NAMES_SHORT: Record<string, string> = {
 };
 
 export const adaptIncomeVsExpenses = (raw: any[]): IncomeExpenseData => {
+  const dataMap: Record<string, { income: number; expense: number }> = {};
+  raw.forEach(item => {
+    const key = item.month;
+    if (key) {
+      dataMap[key] = {
+        income: parseFloat(item.income) || 0,
+        expense: parseFloat(item.expenses) || 0,
+      };
+    }
+  });
+
+  const keys = Object.keys(dataMap).sort();
+  if (keys.length === 0) {
+    return { labels: [], income: [], expense: [] };
+  }
+
+  const firstKey = keys[0];
+  const now = new Date();
+  const lastKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const result: { key: string; label: string; income: number; expense: number }[] = [];
+  const [startYear, startMonth] = firstKey.split('-').map(Number);
+  const [endYear, endMonth] = lastKey.split('-').map(Number);
+
+  let y = startYear;
+  let m = startMonth;
+
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    const key = `${y}-${String(m).padStart(2, '0')}`;
+    const monthNum = String(m).padStart(2, '0');
+    const label = MONTH_NAMES_SHORT[monthNum] || key;
+    const entry = dataMap[key] ?? { income: 0, expense: 0 };
+    result.push({ key, label, income: entry.income, expense: entry.expense });
+
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+
   return {
-    labels: raw.map(item => {
-      const monthNum = item.month?.split('-')[1] || '';
-      return MONTH_NAMES_SHORT[monthNum] || item.month;
-    }),
-    income: raw.map(item => parseFloat(item.income) || 0),
-    expense: raw.map(item => parseFloat(item.expenses) || 0),
+    labels: result.map(r => r.label),
+    income: result.map(r => r.income),
+    expense: result.map(r => r.expense),
   };
 };
 
 export const adaptDistribution = (raw: any): DistributionData[] => {
   const items: any[] = Array.isArray(raw) ? raw : (raw?.data || []);
   const colors = APP_THEME.cards.categories;
-
-  console.log('[DEBUG] adaptDistribution items:', JSON.stringify(items));
 
   return items.map((item: any, index: number) => ({
     category: item.category_name || 'Sin categoría',
@@ -49,28 +82,41 @@ export const adaptDistribution = (raw: any): DistributionData[] => {
   }));
 };
 
-export const normalizeTransaction = (t: any): Transaction => {
+export const normalizeTransaction = (t: any, typeLookup: Record<string, 'INCOME' | 'EXPENSE'> = {}): Transaction => {
   const dateStr = t.transaction_date || t.date || new Date().toISOString();
-  const date = new Date(dateStr);
-  const validDate = isNaN(date.getTime()) ? new Date() : date;
 
   const amount = Math.abs(parseFloat(t.amount)) || 0;
   const description = (t.description || '').toLowerCase();
 
-  const typeName = (t.transaction_type?.name || t.type_name || t.category || '').toLowerCase();
+  const typeId = t.transaction_type_id || t.type_id || '';
+  let finalType: 'INCOME' | 'EXPENSE' = typeLookup[typeId] || 'EXPENSE';
 
-  const isIncome =
-    typeName.includes('ingreso') ||
-    t.type === 'INCOME' ||
-    description.includes('sueldo') ||
-    description.includes('abono');
+  if (!typeLookup[typeId]) {
+    const typeName = (
+      t.transaction_type?.name ||
+      t.type_name ||
+      (t.transaction_type && typeof t.transaction_type === 'string' ? t.transaction_type : '') ||
+      t.type ||
+      t.category ||
+      ''
+    ).toUpperCase();
+
+    const isIncome =
+      typeName.includes('INGRESO') ||
+      typeName.includes('INCOME') ||
+      description.includes('sueldo') ||
+      description.includes('abono') ||
+      description.includes('pago recibido');
+
+    if (isIncome) finalType = 'INCOME';
+  }
 
   return {
     ...t,
     id: t.transaction_id || t.id || Math.random().toString(),
     amount: amount,
     date: dateStr,
-    type: isIncome ? 'INCOME' : 'EXPENSE',
+    type: finalType,
     description: t.description || 'Sin descripción'
   } as Transaction;
 };

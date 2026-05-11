@@ -1,11 +1,15 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
 import { Transaction } from '@/types/transaction';
 import { normalizeTransaction } from '@/services/api/adapters';
+import { useState } from 'react';
+import { updateTransaction } from '@/services/api/transactions';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  onRefresh?: () => void;
+  onDelete?: (transactionId: string) => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -21,12 +25,45 @@ const formatDate = (dateString: string) => {
   return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
 };
 
-export default function RecentTransactions({ transactions }: RecentTransactionsProps) {
-  const rawList = Array.isArray(transactions)
+export default function RecentTransactions({ transactions, onRefresh, onDelete }: RecentTransactionsProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDesc, setEditDesc] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const startEditing = (item: Transaction) => {
+    setEditingId(item.id);
+    setEditDesc(item.description || '');
+    setEditAmount(String(Math.round(item.amount)));
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setIsSaving(false);
+  };
+
+  const handleSave = async (id: string) => {
+    if (!editAmount || parseFloat(editAmount) <= 0) {
+      Alert.alert('Error', 'El monto debe ser mayor a 0');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      await updateTransaction(id, {
+        description: editDesc,
+        amount: parseFloat(editAmount)
+      } as any);
+      setEditingId(null);
+      onRefresh?.();
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo actualizar el registro');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  const list = Array.isArray(transactions)
     ? transactions
     : (transactions as any)?.data ?? [];
-
-  const list = rawList.map(normalizeTransaction);
 
   return (
     <View style={styles.container}>
@@ -39,35 +76,91 @@ export default function RecentTransactions({ transactions }: RecentTransactionsP
         {list.length === 0 ? (
           <Text style={{ color: APP_THEME.text.secondary }}>No hay transacciones recientes.</Text>
         ) : (
-          list.slice(0, 5).map((item: Transaction) => (
-            <View key={item.id} style={styles.item}>
-              <View style={styles.leftContent}>
-                <View style={[
-                  styles.iconContainer,
-                  { backgroundColor: item.type === 'INCOME' ? APP_THEME.cards.income.background : APP_THEME.cards.expense.background }
-                ]}>
-                  <Ionicons
-                    name="ellipsis-horizontal"
-                    size={12}
-                    color={item.type === 'INCOME' ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text}
-                  />
+          list.slice(0, 5).map((item: Transaction) => {
+            const isEditing = editingId === item.id;
+            return (
+              <View key={item.id} style={styles.item}>
+                <View style={styles.leftContent}>
+                  <View style={[
+                    styles.iconContainer,
+                    { backgroundColor: item.type === 'INCOME' ? APP_THEME.cards.income.background : APP_THEME.cards.expense.background }
+                  ]}>
+                    <Ionicons
+                      name={item.type === 'INCOME' ? 'trending-up' : 'trending-down'}
+                      size={12}
+                      color={item.type === 'INCOME' ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text}
+                    />
+                  </View>
+                  <View style={styles.itemMeta}>
+                    {isEditing ? (
+                      <TextInput
+                        style={styles.inlineInput}
+                        value={editDesc}
+                        onChangeText={setEditDesc}
+                        autoFocus
+                      />
+                    ) : (
+                      <>
+                        <Text style={styles.itemName}>{item.category || (item as any).category_name || 'Otros'}</Text>
+                        {item.description ? <Text style={styles.itemDescription}>{item.description}</Text> : null}
+                        <View style={styles.dateRow}>
+                          <Ionicons name="calendar-outline" size={10} color={APP_THEME.text.secondary} />
+                          <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
+                        </View>
+                      </>
+                    )}
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.itemName}>{item.description}</Text>
-                  <View style={styles.dateRow}>
-                    <Ionicons name="calendar-outline" size={10} color={APP_THEME.text.secondary} />
-                    <Text style={styles.itemDate}>{formatDate(item.date)}</Text>
+                <View style={styles.rightContent}>
+                  {isEditing ? (
+                    <TextInput
+                      style={[styles.inlineInput, styles.amountInput]}
+                      value={editAmount}
+                      onChangeText={v => setEditAmount(v.replace(/[^0-9]/g, ''))}
+                      keyboardType="numeric"
+                    />
+                  ) : (
+                    <Text style={[
+                      styles.itemAmount,
+                      { color: item.type === 'INCOME' ? APP_THEME.status.success : APP_THEME.text.primary }
+                    ]}>
+                      {item.type === 'INCOME' ? '+ ' : '- '}{formatCurrency(item.amount)}
+                    </Text>
+                  )}
+
+                  <View style={styles.actionsRow}>
+                    {isEditing ? (
+                      <>
+                        {isSaving ? (
+                          <ActivityIndicator size="small" color={APP_THEME.status.success} />
+                        ) : (
+                          <TouchableOpacity onPress={() => handleSave(item.id)}>
+                            <Ionicons name="checkmark-circle" size={20} color={APP_THEME.status.success} />
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={cancelEditing}>
+                          <Ionicons name="close-circle-outline" size={20} color={APP_THEME.text.secondary} />
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <>
+                        <TouchableOpacity style={styles.actionBtn} onPress={() => startEditing(item)}>
+                          <Ionicons name="pencil-outline" size={13} color={APP_THEME.text.secondary} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.actionBtn} onPress={() => {
+                          const finalId = item.id || (item as any).transaction_id;
+                          console.log('[RecentTransactions] Requesting delete for:', finalId);
+                          onDelete?.(finalId);
+                        }}>
+                          <Ionicons name="trash-outline" size={13} color={APP_THEME.status.error} />
+                        </TouchableOpacity>
+                      </>
+                    )}
                   </View>
                 </View>
               </View>
-              <Text style={[
-                styles.itemAmount,
-                { color: item.type === 'INCOME' ? APP_THEME.cards.income.text : APP_THEME.text.primary }
-              ]}>
-                {item.type === 'INCOME' ? '+' : '-'}{formatCurrency(item.amount)}
-              </Text>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
     </View>
@@ -106,6 +199,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  itemMeta: {
+    flex: 1,
+  },
+  rightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   iconContainer: {
     width: 32,
@@ -117,7 +220,12 @@ const styles = StyleSheet.create({
   itemName: {
     color: APP_THEME.text.primary,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  itemDescription: {
+    color: APP_THEME.text.secondary,
+    fontSize: 12,
     marginBottom: 2,
   },
   dateRow: {
@@ -130,7 +238,30 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   itemAmount: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  actionBtn: {
+    padding: 4,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  inlineInput: {
+    color: APP_THEME.text.primary,
+    fontSize: 13,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    backgroundColor: APP_THEME.card.border,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: APP_THEME.text.secondary + '30',
+  },
+  amountInput: {
+    width: 65,
+    textAlign: 'right',
     fontWeight: 'bold',
   },
 });

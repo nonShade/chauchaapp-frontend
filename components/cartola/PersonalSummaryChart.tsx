@@ -1,5 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Line, Circle, Path } from 'react-native-svg';
+import { Text as SvgText } from 'react-native-svg';
 import { APP_THEME } from '@/constants/themes';
 import { IncomeExpenseData } from '@/types/transaction';
 
@@ -7,22 +10,59 @@ interface PersonalSummaryChartProps {
   data: IncomeExpenseData | null;
 }
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CHART_WIDTH = SCREEN_WIDTH - 30 - 50 - 40;
+const X_PAD = 18;
+const CHART_HEIGHT = 180;
+
+const formatYAxis = (val: number): string => {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${Math.round(val / 1_000)}k`;
+  return val.toString();
+};
+
 export default function PersonalSummaryChart({ data }: PersonalSummaryChartProps) {
-  const chartData = data?.labels?.map((label, index) => ({
-    label,
-    income: data.income?.[index] || 0,
-    expense: data.expense?.[index] || 0,
-  })) || [];
+  const [activeTab, setActiveTab] = useState<'income' | 'expense'>('income');
 
-  const maxVal = Math.max(
-    ...chartData.map(d => Math.max(d.income, d.expense)),
-  );
+  const rawLabels = data?.labels ?? [];
+  const incomes = data?.income ?? [];
+  const expenses = data?.expense ?? [];
 
-  const formatYAxis = (val: number) => {
-    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
-    if (val >= 1000) return `${(val / 1000).toFixed(0)}k`;
-    return val.toString();
+  const isIncome = activeTab === 'income';
+  const rawActiveData = isIncome ? incomes : expenses;
+
+  let startIndex = rawActiveData.findIndex(v => v > 0);
+  if (startIndex === -1 && rawActiveData.length > 0) {
+    startIndex = Math.max(0, rawActiveData.length - 6);
+  }
+
+  const activeData = startIndex > 0 ? rawActiveData.slice(startIndex) : rawActiveData;
+  const labels = startIndex > 0 ? rawLabels.slice(startIndex) : rawLabels;
+
+  const activeColor = isIncome ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text;
+  const legendLabel = isIncome ? 'Ingresos mensuales' : 'Gastos mensuales';
+
+  const maxValue = activeData.length > 0 ? Math.max(...activeData, 1) : 1;
+  const niceMax = Math.ceil(maxValue / 250_000) * 250_000 || 1_000_000;
+  const yTicks = [niceMax, niceMax * 0.75, niceMax * 0.5, niceMax * 0.25, 0];
+
+  const n = labels.length;
+  const drawWidth = CHART_WIDTH - X_PAD * 2;
+  const xStep = n > 1 ? drawWidth / (n - 1) : drawWidth;
+
+  const getY = (value: number): number => {
+    const ratio = Math.min(value / niceMax, 1);
+    return CHART_HEIGHT - ratio * CHART_HEIGHT;
   };
+
+  const points = activeData.map((val, idx) => ({
+    x: X_PAD + idx * xStep,
+    y: getY(val),
+  }));
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+
+  const hasData = n > 0;
 
   return (
     <View style={styles.container}>
@@ -30,48 +70,102 @@ export default function PersonalSummaryChart({ data }: PersonalSummaryChartProps
         <Ionicons name="bar-chart-outline" size={18} color={APP_THEME.cards.balance.tagText} />
         <Text style={styles.title}>Resumen Personal</Text>
       </View>
-      <Text style={styles.subtitle}>Ingresos vs Gastos</Text>
 
-      <View style={styles.chartArea}>
-        <View style={styles.yAxis}>
-          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal)}</Text>
-          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.75)}</Text>
-          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.5)}</Text>
-          <Text style={styles.yAxisLabel}>{formatYAxis(maxVal * 0.25)}</Text>
-          <Text style={styles.yAxisLabel}>0</Text>
-        </View>
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tab, isIncome && styles.tabActiveIncome]}
+          onPress={() => setActiveTab('income')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="trending-up-outline"
+            size={14}
+            color={isIncome ? APP_THEME.cards.income.text : APP_THEME.text.secondary}
+          />
+          <Text style={[styles.tabText, isIncome && { color: APP_THEME.cards.income.text, fontWeight: '700' }]}>
+            Ingresos
+          </Text>
+        </TouchableOpacity>
 
-        <View style={styles.barsContainer}>
-          {chartData.length === 0 ? (
-            <Text style={{ color: APP_THEME.text.secondary, alignSelf: 'center', flex: 1, textAlign: 'center' }}>No hay datos.</Text>
-          ) : (
-            chartData.map((item, index) => (
-              <View key={index} style={styles.monthCol}>
-                <View style={styles.barGroup}>
-                  {item.income > 0 && (
-                    <View style={[styles.bar, { height: `${(item.income / maxVal) * 100}%`, backgroundColor: APP_THEME.cards.income.text }]} />
-                  )}
-                  {item.expense > 0 && (
-                    <View style={[styles.bar, { height: `${(item.expense / maxVal) * 100}%`, backgroundColor: APP_THEME.cards.expense.text }]} />
-                  )}
-                </View>
-                <Text style={styles.xAxisLabel}>{item.label}</Text>
-              </View>
-            ))
-          )}
-        </View>
+        <TouchableOpacity
+          style={[styles.tab, !isIncome && styles.tabActiveExpense]}
+          onPress={() => setActiveTab('expense')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="trending-down-outline"
+            size={14}
+            color={!isIncome ? APP_THEME.cards.expense.text : APP_THEME.text.secondary}
+          />
+          <Text style={[styles.tabText, !isIncome && { color: APP_THEME.cards.expense.text, fontWeight: '700' }]}>
+            Gastos
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: APP_THEME.cards.income.text }]} />
-          <Text style={styles.legendText}>Ingresos</Text>
+      {/* Gráfico */}
+      {!hasData ? (
+        <Text style={styles.noDataText}>No hay datos disponibles</Text>
+      ) : (
+        <View style={styles.chartContainer}>
+          <View style={styles.yAxisColumn}>
+            {yTicks.map((tick, i) => (
+              <Text key={i} style={styles.yTick}>{formatYAxis(tick)}</Text>
+            ))}
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Svg width={CHART_WIDTH} height={CHART_HEIGHT + 24}>
+              {yTicks.map((tick, i) => {
+                const y = getY(tick);
+                return (
+                  <Line
+                    key={`grid-${i}`}
+                    x1={0} y1={y}
+                    x2={CHART_WIDTH} y2={y}
+                    stroke={APP_THEME.card.border}
+                    strokeWidth={0.5}
+                    strokeDasharray="4"
+                  />
+                );
+              })}
+
+              {n > 1 && (
+                <Path d={linePath} fill="none" stroke={activeColor} strokeWidth={2.5} />
+              )}
+
+              {points.map((p, idx) => (
+                <Circle
+                  key={`pt-${idx}`}
+                  cx={p.x} cy={p.y}
+                  r={4}
+                  fill={activeColor}
+                />
+              ))}
+
+              {labels.map((label, idx) => (
+                <SvgText
+                  key={`xl-${idx}`}
+                  x={X_PAD + idx * xStep}
+                  y={CHART_HEIGHT + 20}
+                  fontSize={11}
+                  fill={APP_THEME.text.secondary}
+                  textAnchor="middle"
+                >
+                  {label}
+                </SvgText>
+              ))}
+            </Svg>
+          </View>
         </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: APP_THEME.cards.expense.text }]} />
-          <Text style={styles.legendText}>Gastos</Text>
+      )}
+
+      {hasData && (
+        <View style={styles.legend}>
+          <View style={[styles.legendDot, { backgroundColor: activeColor }]} />
+          <Text style={styles.legendText}>{legendLabel}</Text>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -89,81 +183,87 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    marginBottom: 16,
   },
   title: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
-  subtitle: {
-    color: APP_THEME.text.secondary,
-    fontSize: 14,
-    marginBottom: 24,
-  },
-  chartArea: {
+  tabRow: {
     flexDirection: 'row',
-    height: 180,
+    backgroundColor: APP_THEME.card.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
     marginBottom: 20,
+    overflow: 'hidden',
   },
-  yAxis: {
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 11,
+  },
+  tabActiveIncome: {
+    backgroundColor: '#081B13',
+    borderWidth: 1,
+    borderColor: APP_THEME.cards.income.border,
+    margin: 3,
+    borderRadius: 9,
+  },
+  tabActiveExpense: {
+    backgroundColor: '#1F0A0E',
+    borderWidth: 1,
+    borderColor: APP_THEME.cards.expense.border,
+    margin: 3,
+    borderRadius: 9,
+  },
+  tabText: {
+    fontSize: 14,
+    color: APP_THEME.text.secondary,
+    fontWeight: '500',
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    height: CHART_HEIGHT + 28,
+    marginBottom: 8,
+  },
+  yAxisColumn: {
+    width: 50,
     justifyContent: 'space-between',
-    paddingRight: 12,
     alignItems: 'flex-end',
+    paddingRight: 8,
+    paddingBottom: 24,
   },
-  yAxisLabel: {
+  yTick: {
     color: APP_THEME.text.secondary,
     fontSize: 10,
   },
-  barsContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: APP_THEME.card.border,
-  },
-  monthCol: {
-    flex: 1,
-    alignItems: 'center',
-    height: '100%',
-    justifyContent: 'flex-end',
-  },
-  barGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: '100%',
-    gap: 4,
-    paddingBottom: 4,
-  },
-  bar: {
-    width: 14,
-    borderRadius: 4,
-  },
-  xAxisLabel: {
-    color: APP_THEME.text.secondary,
-    fontSize: 12,
-    position: 'absolute',
-    bottom: -16,
-  },
   legend: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 24,
-  },
-  legendItem: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: APP_THEME.card.border,
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: 13,
+  },
+  noDataText: {
+    color: APP_THEME.text.secondary,
+    textAlign: 'center',
+    paddingVertical: 40,
   },
 });

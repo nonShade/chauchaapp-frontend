@@ -56,6 +56,7 @@ export const APP_THEME = {
       border: "#3F2113",
       text: "#eceff2",
       accent: "#E97D21",
+      iconBg: "#3F2113",
     },
     income: {
       background: "#081B13",
