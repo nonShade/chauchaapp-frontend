@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Act
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
-import PersonalSummaryChart from '@/components/cartola/PersonalSummaryChart';
-import MonthAccordion from '@/components/cartola/MonthAccordion';
-import PersonalTotals from '@/components/cartola/PersonalTotals';
-import CategoryExpenses from '@/components/cartola/CategoryExpenses';
-import RecentTransactions from '@/components/cartola/RecentTransactions';
+import PersonalSummaryChart from '@/components/cartola/individual/PersonalSummaryChart';
+import MonthAccordion from '@/components/cartola/individual/MonthAccordion';
+import PersonalTotals from '@/components/cartola/individual/PersonalTotals';
+import CategoryExpenses from '@/components/cartola/individual/CategoryExpenses';
+import RecentTransactions from '@/components/cartola/shared/RecentTransactions';
 import { useCartolaData } from '@/hooks/useCartolaData';
 import { deleteTransaction } from '@/services/api/transactions';
 
@@ -96,14 +96,24 @@ export default function CartolaScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.pageTitle}>Libreta de Gastos</Text>
-            <View style={styles.personalModeTag}>
-              <Ionicons name="person-outline" size={12} color={APP_THEME.cards.balance.tagText} />
-              <Text style={styles.personalModeText}>Modo personal</Text>
-            </View>
+            {activeTab === 'individual' ? (
+              <View style={styles.personalModeTag}>
+                <Ionicons name="person-outline" size={12} color={APP_THEME.cards.balance.tagText} />
+                <Text style={styles.personalModeText}>Modo personal</Text>
+              </View>
+            ) : (
+              <View style={[styles.personalModeTag, { backgroundColor: APP_THEME.group.modeTagBg }]}>
+                <Ionicons name="people-outline" size={12} color={APP_THEME.group.modeTagText} />
+                <Text style={[styles.personalModeText, { color: APP_THEME.group.modeTagText }]}>Modo Casa González</Text>
+              </View>
+            )}
           </View>
-          <TouchableOpacity style={styles.addButton} onPress={() => router.push('/new-transaction')}>
-            <Ionicons name="add" size={16} color={APP_THEME.components.tabs.activeText} />
-            <Text style={styles.addButtonText}>Agregar</Text>
+          <TouchableOpacity 
+            style={[styles.addButton, activeTab === 'group' && { backgroundColor: APP_THEME.group.primary }]} 
+            onPress={() => router.push('/new-transaction')}
+          >
+            <Ionicons name="add" size={16} color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.activeText} />
+            <Text style={[styles.addButtonText, activeTab === 'group' && { color: APP_THEME.group.primaryText }]}>Agregar</Text>
           </TouchableOpacity>
         </View>
 
@@ -127,17 +137,21 @@ export default function CartolaScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.toggleButton, activeTab === 'group' && styles.toggleActive]}
+            style={[
+              styles.toggleButton, 
+              activeTab === 'group' && styles.toggleActive,
+              activeTab === 'group' && { backgroundColor: APP_THEME.group.primary }
+            ]}
             onPress={() => setActiveTab('group')}
           >
             <Ionicons
               name={activeTab === 'group' ? "people" : "people-outline"}
               size={18}
-              color={activeTab === 'group' ? APP_THEME.components.tabs.activeText : APP_THEME.components.tabs.inactiveText}
+              color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText}
             />
             <Text style={[
               styles.toggleText,
-              { color: activeTab === 'group' ? APP_THEME.components.tabs.activeText : APP_THEME.components.tabs.inactiveText }
+              { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
             ]}>
               Casa González
             </Text>
@@ -168,17 +182,35 @@ export default function CartolaScreen() {
         </View>
 
         {/* Tarjeta de Balance Disponible */}
-        <View style={[styles.balanceCard, { backgroundColor: APP_THEME.cards.balance.background, borderColor: APP_THEME.cards.balance.border }]}>
+        <View style={[
+          styles.balanceCard, 
+          { 
+            backgroundColor: activeTab === 'group' ? APP_THEME.cards.groupBalance.background : APP_THEME.cards.balance.background, 
+            borderColor: activeTab === 'group' ? APP_THEME.cards.groupBalance.border : APP_THEME.cards.balance.border 
+          }
+        ]}>
           <View style={styles.balanceContent}>
-            <View style={styles.balanceTag}>
-              <Ionicons name="person-outline" size={12} color={APP_THEME.cards.balance.tagText} />
-              <Text style={styles.balanceTagText}>Personal</Text>
+            <View style={[styles.balanceTag, activeTab === 'group' && { backgroundColor: APP_THEME.cards.groupBalance.tagBg }]}>
+              <Ionicons 
+                name={activeTab === 'group' ? "people-outline" : "person-outline"} 
+                size={12} 
+                color={activeTab === 'group' ? APP_THEME.cards.groupBalance.tagText : APP_THEME.cards.balance.tagText} 
+              />
+              <Text style={[styles.balanceTagText, activeTab === 'group' && { color: APP_THEME.cards.groupBalance.tagText }]}>
+                {activeTab === 'group' ? 'Grupal' : 'Personal'}
+              </Text>
             </View>
-            <Text style={styles.balanceAmount}>{isLoading ? '...' : formatCurrency(balance)}</Text>
+            <Text style={styles.balanceAmount}>
+              {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(balance))}
+            </Text>
             <Text style={styles.balanceSubtitle}>Balance disponible</Text>
           </View>
-          <View style={[styles.walletIconContainer, { backgroundColor: APP_THEME.cards.balance.iconBg }]}>
-            <Ionicons name="wallet-outline" size={28} color={APP_THEME.components.tabs.activeText} />
+          <View style={[styles.walletIconContainer, { backgroundColor: activeTab === 'group' ? APP_THEME.cards.groupBalance.iconBg : APP_THEME.cards.balance.iconBg }]}>
+            <Ionicons 
+              name={activeTab === 'group' ? "people" : "wallet-outline"} 
+              size={28} 
+              color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.activeText} 
+            />
           </View>
         </View>
 
@@ -189,9 +221,15 @@ export default function CartolaScreen() {
           </View>
           <View style={styles.tipTextContainer}>
             <Text style={styles.tipTitle}>Recomendacion de ahorro</Text>
-            <Text style={styles.tipDescription}>
-              Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>{isLoading ? '...' : formatCurrency(savings)}</Text> este mes (20% de tus ingresos).
-            </Text>
+            {activeTab === 'group' ? (
+              <Text style={styles.tipDescription}>
+                Sin informacion por mientras
+              </Text>
+            ) : (
+              <Text style={styles.tipDescription}>
+                Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>{isLoading ? '...' : formatCurrency(savings)}</Text> este mes (20% de tus ingresos).
+              </Text>
+            )}
           </View>
         </View>
 
@@ -203,7 +241,7 @@ export default function CartolaScreen() {
 
         {isLoading ? (
           <ActivityIndicator size="large" color={APP_THEME.cards.income.text} style={{ marginTop: 40 }} />
-        ) : (
+        ) : activeTab === 'individual' ? (
           <>
             <PersonalSummaryChart data={incomeVsExpenses} />
             <MonthAccordion
@@ -220,6 +258,38 @@ export default function CartolaScreen() {
               onDelete={handleDelete}
             />
           </>
+        ) : (
+          <View style={styles.groupContentContainer}>
+            <View style={styles.emptySection}>
+              <View style={styles.emptySectionHeader}>
+                <Ionicons name="bar-chart-outline" size={20} color={APP_THEME.text.primary} />
+                <Text style={styles.emptySectionTitle}>Resumen del Grupo</Text>
+              </View>
+              <View style={styles.emptySectionBody}>
+                <Text style={styles.emptySectionText}>No hay movimientos registrados</Text>
+              </View>
+            </View>
+
+            <View style={styles.emptySection}>
+              <View style={styles.emptySectionHeader}>
+                <Ionicons name="pie-chart-outline" size={20} color={APP_THEME.text.primary} />
+                <Text style={styles.emptySectionTitle}>Gastos del grupo</Text>
+              </View>
+              <View style={styles.emptySectionBody}>
+                <Text style={styles.emptySectionText}>No hay gastos registrados</Text>
+              </View>
+            </View>
+
+            <View style={styles.emptySection}>
+              <View style={styles.emptySectionHeader}>
+                <Ionicons name="list-outline" size={20} color={APP_THEME.text.primary} />
+                <Text style={styles.emptySectionTitle}>Últimos movimientos del grupo</Text>
+              </View>
+              <View style={styles.emptySectionBody}>
+                <Text style={styles.emptySectionText}>No hay movimientos registrados</Text>
+              </View>
+            </View>
+          </View>
         )}
 
       </ScrollView>
@@ -399,5 +469,36 @@ const styles = StyleSheet.create({
     color: APP_THEME.text.secondary,
     fontSize: 14,
     lineHeight: 20,
+  },
+  groupContentContainer: {
+    gap: 16,
+    paddingTop: 8,
+  },
+  emptySection: {
+    borderWidth: 1,
+    borderColor: APP_THEME.cards.expense.border,
+    backgroundColor: APP_THEME.card.background,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  emptySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptySectionTitle: {
+    color: APP_THEME.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  emptySectionBody: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+  },
+  emptySectionText: {
+    color: APP_THEME.text.secondary,
+    fontSize: 14,
   },
 });
