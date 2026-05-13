@@ -72,14 +72,14 @@ export const APP_THEME = {
     },
     balance: {
       background: "#0f1419",
-      border: "#252c38",
+      border: "#3CA5FF",
       tagBg: "#113255",
       tagText: "#3CA5FF",
       iconBg: "#3CA5FF",
     },
     groupBalance: {
       background: "#0f1419",
-      border: "#252c38",
+      border: "#FF8A4C",
       tagBg: "#3D2415",
       tagText: "#FF8A4C",
       iconBg: "#FF8A4C",
