@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
+import { getCategoryIcon } from '@/constants/icons';
 import { DistributionData } from '@/types/transaction';
 
 const { width } = Dimensions.get('window');
@@ -65,7 +66,7 @@ export default function CategoryExpenses({ distribution }: CategoryExpensesProps
         <View style={styles.itemHeader}>
           <View style={styles.itemInfo}>
             <Ionicons
-              name="pricetag-outline"
+              name={getCategoryIcon(item.category)}
               size={18}
               color={APP_THEME.text.secondary}
             />
@@ -103,7 +104,7 @@ export default function CategoryExpenses({ distribution }: CategoryExpensesProps
               style={[
                 styles.dot,
                 {
-                  backgroundColor: index === activeIndex ? expenseColor : APP_THEME.card.progressBg,
+                  backgroundColor: index === activeIndex ? expenseColor : APP_THEME.text.primary,
                 },
               ]}
             />
