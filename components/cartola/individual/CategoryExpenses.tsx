@@ -105,6 +105,8 @@ export default function CategoryExpenses({ distribution }: CategoryExpensesProps
                 styles.dot,
                 {
                   backgroundColor: index === activeIndex ? expenseColor : APP_THEME.text.primary,
+                  width: index === activeIndex ? 20 : 8,
+                  opacity: index === activeIndex ? 1 : 0.5,
                 },
               ]}
             />
