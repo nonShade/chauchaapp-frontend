@@ -166,7 +166,7 @@ export default function CartolaScreen() {
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.income.text }]}>Ingresos</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.amountText }]}>
-              {isLoading ? '...' : formatCurrency(income)}
+              {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(income))}
             </Text>
           </View>
 
@@ -176,7 +176,7 @@ export default function CartolaScreen() {
               <Text style={[styles.summaryTitle, { color: APP_THEME.cards.expense.text }]}>Gastos</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.amountText }]}>
-              {isLoading ? '...' : formatCurrency(expense)}
+              {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(expense))}
             </Text>
           </View>
         </View>
