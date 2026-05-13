@@ -77,7 +77,21 @@ export const APP_THEME = {
       tagText: "#3CA5FF",
       iconBg: "#3CA5FF",
     },
+    groupBalance: {
+      background: "#2A180E",
+      border: "#4A2B19",
+      tagBg: "#3D2415",
+      tagText: "#FF8A4C",
+      iconBg: "#FF8A4C",
+    },
     categories: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'],
+  },
+
+  group: {
+    primary: "#FF8A4C",
+    primaryText: "#000000",
+    modeTagBg: "#3D2415",
+    modeTagText: "#FF8A4C",
   },
 
   components: {
