@@ -30,7 +30,8 @@ export const getTransactionsHistory = async (): Promise<Transaction[]> => {
 };
 
 export const getIncomeVsExpenses = async (): Promise<IncomeExpenseData> => {
-  const response = await apiClient.get('/transactions/analytics/income-vs-expenses');
+  const timestamp = new Date().getTime();
+  const response = await apiClient.get(`/transactions/analytics/income-vs-expenses?t=${timestamp}`);
   return adaptIncomeVsExpenses(response.data || []);
 };
 
