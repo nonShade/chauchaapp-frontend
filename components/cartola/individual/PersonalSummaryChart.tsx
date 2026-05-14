@@ -29,15 +29,8 @@ export default function PersonalSummaryChart({ data }: PersonalSummaryChartProps
   const expenses = data?.expense ?? [];
 
   const isIncome = activeTab === 'income';
-  const rawActiveData = isIncome ? incomes : expenses;
-
-  let startIndex = rawActiveData.findIndex(v => v > 0);
-  if (startIndex === -1 && rawActiveData.length > 0) {
-    startIndex = Math.max(0, rawActiveData.length - 6);
-  }
-
-  const activeData = startIndex > 0 ? rawActiveData.slice(startIndex) : rawActiveData;
-  const labels = startIndex > 0 ? rawLabels.slice(startIndex) : rawLabels;
+  const activeData = isIncome ? incomes : expenses;
+  const labels = rawLabels;
 
   const activeColor = isIncome ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text;
   const legendLabel = isIncome ? 'Ingresos mensuales' : 'Gastos mensuales';
