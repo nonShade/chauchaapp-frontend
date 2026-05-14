@@ -161,32 +161,12 @@ export function useCartolaData() {
 
       const finalDistribution = buildDistributionFromTransactions(txList, expenseAcc, catLookup, typeLookup);
 
-      // Calcular income vs expenses de forma local hasta resolver 
-      const monthlyDataMap: Record<string, { income: number, expenses: number }> = {};
-      normalizedTransactions.forEach((tx: any) => {
-        const date = new Date(tx.date);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthlyDataMap[key]) monthlyDataMap[key] = { income: 0, expenses: 0 };
-        if (tx.type === 'INCOME') {
-          monthlyDataMap[key].income += tx.amount;
-        } else {
-          monthlyDataMap[key].expenses += tx.amount;
-        }
-      });
-      const localRawData = Object.entries(monthlyDataMap).map(([month, data]) => ({
-        month,
-        income: data.income,
-        expenses: data.expenses
-      }));
-      const { adaptIncomeVsExpenses } = require('../services/api/adapters');
-      const localIncomeVsExpensesData = adaptIncomeVsExpenses(localRawData);
-
       setSummary(summaryData);
       setTransactions(normalizedTransactions);
       setCalculatedBalance(balanceAcc);
       setCalculatedIncome(incomeAcc);
       setCalculatedExpense(expenseAcc);
-      setIncomeVsExpenses(localIncomeVsExpensesData);
+      setIncomeVsExpenses(incomeVsExpensesData);
       setDistribution(finalDistribution);
     } catch (err: any) {
       console.error('Error fetching cartola data:', err);
