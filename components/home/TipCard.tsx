@@ -1,17 +1,21 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
+import { Tip } from '@/services/api/tips';
 
-export default function TipCard({ tip = '', semana = '' }) {
+export default function TipCard({ tip }: { tip: Tip | null }) {
   return (
-    <View style={[styles.container, { backgroundColor: APP_THEME.cards.tip.background, borderColor: APP_THEME.cards.tip.border }]}>
-      <View style={[styles.iconContainer, { backgroundColor: APP_THEME.cards.tip.border }]}>
+    <View style={{flexDirection: 'column', backgroundColor: APP_THEME.cards.tip.background, borderColor: APP_THEME.cards.tip.accent, borderRadius: 16, borderWidth: 1,}}>
+      <Text style={[styles.title, { color: APP_THEME.cards.tip.accent, padding: 12, paddingLeft: 16, paddingRight: 16 }]}>Tip financiero del día</Text>
+    <View style={[styles.container]}>
+      <View style={[styles.iconContainer]}>
         <Ionicons name="bulb-outline" size={24} color={APP_THEME.cards.tip.accent} />
       </View>
       <View style={styles.contentContainer}>
-        <Text style={[styles.title, { color: APP_THEME.cards.tip.text }]}>Tip financiero del dia</Text>
-        <Text style={[styles.tipText, { color: APP_THEME.text.secondary }]}>{tip}</Text>
+        <Text style={[styles.title, { color: APP_THEME.cards.tip.text }]}>{tip?.title || '...'}</Text>
+        <Text style={[styles.tipText, { color: APP_THEME.text.secondary }]}>{tip?.text || 'Lo sentimos, no pudimos encontrar el tip del día.'}</Text>
       </View>
+    </View>
     </View>
   );
 }
@@ -20,9 +24,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 16,
-    borderRadius: 16,
+    paddingTop: 0,
     marginHorizontal: 0,
-    borderWidth: 1,
   },
   iconContainer: {
     width: 44,

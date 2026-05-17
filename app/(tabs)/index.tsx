@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
 import { useCartolaData } from "@/hooks/useCartolaData";
+import { getTipOfTheDay, Tip } from "@/services/api/tips";
 
 const formatCLP = (amount: number) => {
   return new Intl.NumberFormat('es-CL', {
@@ -30,6 +31,19 @@ export default function HomeScreen() {
   const [balance, setBalance] = useState(0);
   const [ingresos, setIngresos] = useState(0);
   const [gastos, setGastos] = useState(0);
+  const [tipOfTheDay, setTipOfTheDay] = useState<Tip | null>(null);
+
+  useEffect(() => {
+    const fetchTip = async () => {
+      try {
+        const tip = await getTipOfTheDay();
+        setTipOfTheDay(tip);
+      } catch (error) {
+        console.error('Error fetching tip of the day:', error);
+      }
+    };
+    fetchTip();
+  }, []);
 
   const news = {
     title: "El cobre experimenta una leve alza",
@@ -199,7 +213,7 @@ export default function HomeScreen() {
           data={news}
           onVerMas={() => router.push("/(tabs)/news" as any)}
         />
-        <TipCard tip="Destina el 20% de tus ingresos al ahorro. Crea un fondo de emergencia de 3-6 meses de gastos para mayor seguridad financiera." />
+        <TipCard tip={tipOfTheDay} />
       </ScrollView>
     </SafeAreaView>
   );
