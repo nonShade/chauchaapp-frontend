@@ -24,10 +24,24 @@ const MONTH_NAMES_SHORT: Record<string, string> = {
   '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
 };
 
-export const adaptIncomeVsExpenses = (raw: any[]): IncomeExpenseData => {
+export const adaptIncomeVsExpenses = (raw: any): IncomeExpenseData => {
+  // Aceptar varios formatos: array directo, { data: [] }, o un objeto de claves
+  const items: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+    ? raw.data
+    : Array.isArray(Object.values(raw || {}))
+    ? Object.values(raw || {})
+    : [];
+
   const dataMap: Record<string, { income: number; expense: number }> = {};
-  raw.forEach(item => {
-    const key = item.month;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return { labels: [], income: [], expense: [] };
+  }
+
+  items.forEach(item => {
+    const key = item?.month;
     if (key) {
       dataMap[key] = {
         income: parseFloat(item.income) || 0,

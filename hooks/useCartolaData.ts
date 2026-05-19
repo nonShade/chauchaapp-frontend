@@ -51,6 +51,10 @@ function normalizeToOfficialCategory(tx: any, categoryMap: Record<string, string
 function buildDistributionFromTransactions(txList: any[], totalExpense: number, catLookup: Record<string, string>, typeLookup: Record<string, 'INCOME' | 'EXPENSE'>): DistributionData[] {
   const categorySummaryMap: Record<string, { name: string; amount: number }> = {};
 
+  if (!Array.isArray(txList)) {
+    return [];
+  }
+
   txList.forEach((tx: any) => {
     try {
       const { normalizeTransaction } = require('../services/api/adapters');
@@ -137,13 +141,17 @@ export function useCartolaData() {
         ? transactionsData
         : (transactionsData as any)?.data || [];
 
+      if (!Array.isArray(txList)) {
+        throw new Error('Transactions data format is invalid');
+      }
+
       let balanceAcc = 0;
       let incomeAcc = 0;
       let expenseAcc = 0;
 
       const { normalizeTransaction } = require('../services/api/adapters');
 
-      const normalizedTransactions = txList.map((tx: any) => {
+      const normalizedTransactions = (txList as any[]).map((tx: any) => {
         const normalized = normalizeTransaction(tx, typeLookup);
 
         normalized.category = normalizeToOfficialCategory(tx, catLookup);
@@ -162,16 +170,18 @@ export function useCartolaData() {
 
       // Calcular income vs expenses de forma local hasta resolver 
       const monthlyDataMap: Record<string, { income: number, expenses: number }> = {};
-      normalizedTransactions.forEach((tx: any) => {
-        const date = new Date(tx.date);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        if (!monthlyDataMap[key]) monthlyDataMap[key] = { income: 0, expenses: 0 };
-        if (tx.type === 'INCOME') {
-          monthlyDataMap[key].income += tx.amount;
-        } else {
-          monthlyDataMap[key].expenses += tx.amount;
-        }
-      });
+      if (Array.isArray(normalizedTransactions)) {
+        normalizedTransactions.forEach((tx: any) => {
+          const date = new Date(tx.date);
+          const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          if (!monthlyDataMap[key]) monthlyDataMap[key] = { income: 0, expenses: 0 };
+          if (tx.type === 'INCOME') {
+            monthlyDataMap[key].income += tx.amount;
+          } else {
+            monthlyDataMap[key].expenses += tx.amount;
+          }
+        });
+      }
       const localRawData = Object.entries(monthlyDataMap).map(([month, data]) => ({
         month,
         income: data.income,
