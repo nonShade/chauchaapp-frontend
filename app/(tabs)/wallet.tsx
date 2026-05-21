@@ -23,8 +23,9 @@ const formatCurrency = (value: number) => {
 
 export default function CartolaScreen() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
-  const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution, refetch } = useCartolaData();
   const { group, isLoading: isGroupLoading, hasGroup, refetch: refetchGroup } = useGroupData();
+  const skipGroupFetch = activeTab === 'group' && !isGroupLoading && !hasGroup;
+  const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution, refetch } = useCartolaData(activeTab === 'group', skipGroupFetch);
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
   const balance = calculatedBalance !== 0 ? calculatedBalance : (summary?.total_balance || 0);
@@ -32,8 +33,8 @@ export default function CartolaScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
       refetchGroup();
+      refetch();
     }, [refetch, refetchGroup])
   );
 
@@ -85,12 +86,9 @@ export default function CartolaScreen() {
     total_balance: calculatedBalance,
   } : null;
 
-  console.log('[DEBUG-WALLET] transactions raw:', JSON.stringify(transactions).substring(0, 500));
   const transactionsList = Array.isArray(transactions)
     ? transactions
     : (transactions as any)?.data || [];
-  console.log('[DEBUG-WALLET] Nombres de transacciones:', transactionsList.map((t: any) => t.description || 'Sin desc'));
-  console.log('[DEBUG-WALLET] transactionsList length:', transactionsList.length);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -116,11 +114,11 @@ export default function CartolaScreen() {
           </View>
           <TouchableOpacity
             style={[
-              styles.addButton, 
+              styles.addButton,
               activeTab === 'group' && { backgroundColor: APP_THEME.group.primary },
               activeTab === 'group' && !hasGroup && { opacity: 0.5 }
             ]}
-            onPress={() => router.push('/new-transaction')}
+            onPress={() => router.push(activeTab === 'group' ? '/new-transaction?group=true' : '/new-transaction')}
             disabled={activeTab === 'group' && !hasGroup}
           >
             <Ionicons name="add" size={16} color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.activeText} />
@@ -179,7 +177,7 @@ export default function CartolaScreen() {
                   <Text style={[styles.summaryTitle, { color: APP_THEME.cards.income.text }]}>Ingresos</Text>
                 </View>
                 <Text style={[styles.summaryAmount, { color: APP_THEME.cards.income.amountText }]}>
-                  {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(income))}
+                  {isLoading ? '...' : formatCurrency(income)}
                 </Text>
               </View>
 
@@ -189,7 +187,7 @@ export default function CartolaScreen() {
                   <Text style={[styles.summaryTitle, { color: APP_THEME.cards.expense.text }]}>Gastos</Text>
                 </View>
                 <Text style={[styles.summaryAmount, { color: APP_THEME.cards.expense.amountText }]}>
-                  {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(expense))}
+                  {isLoading ? '...' : formatCurrency(expense)}
                 </Text>
               </View>
             </View>
@@ -214,7 +212,7 @@ export default function CartolaScreen() {
                   </Text>
                 </View>
                 <Text style={styles.balanceAmount}>
-                  {activeTab === 'group' ? '$0' : (isLoading ? '...' : formatCurrency(balance))}
+                  {isLoading ? '...' : formatCurrency(balance)}
                 </Text>
                 <Text style={styles.balanceSubtitle}>Balance disponible</Text>
               </View>
@@ -282,20 +280,27 @@ export default function CartolaScreen() {
             <GroupEmptyState />
           ) : (
             <View style={styles.groupContentContainer}>
-              <View style={styles.emptySection}>
-                <View style={styles.emptySectionHeader}>
-                  <Ionicons name="bar-chart-outline" size={20} color={APP_THEME.text.primary} />
-                  <Text style={styles.emptySectionTitle}>Resumen de {group?.name}</Text>
-                </View>
-                <View style={styles.emptySectionBody}>
-                  <Text style={styles.emptySectionText}>Pronto verás aquí la información de tu grupo</Text>
-                </View>
-              </View>
+              <PersonalSummaryChart data={incomeVsExpenses} />
+              <MonthAccordion
+                transactions={transactionsList}
+                summary={summary}
+                onRefresh={refetch}
+                onDelete={handleDelete}
+                isGroup={true}
+              />
+              <PersonalTotals summary={historicalSummary} />
+              <CategoryExpenses distribution={distribution} />
+              <RecentTransactions
+                transactions={transactions}
+                onRefresh={refetch}
+                onDelete={handleDelete}
+                isGroup={true}
+              />
 
               <View style={styles.emptySection}>
                 <View style={styles.emptySectionHeader}>
                   <Ionicons name="people-outline" size={20} color={APP_THEME.text.primary} />
-                  <Text style={styles.emptySectionTitle}>Miembros</Text>
+                  <Text style={styles.emptySectionTitle}>Miembros del Grupo</Text>
                 </View>
                 <View style={[styles.emptySectionBody, { alignItems: 'flex-start', paddingHorizontal: 20 }]}>
                   {group?.admin && (
