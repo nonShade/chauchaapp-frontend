@@ -115,8 +115,13 @@ export default function CartolaScreen() {
             )}
           </View>
           <TouchableOpacity
-            style={[styles.addButton, activeTab === 'group' && { backgroundColor: APP_THEME.group.primary }]}
+            style={[
+              styles.addButton, 
+              activeTab === 'group' && { backgroundColor: APP_THEME.group.primary },
+              activeTab === 'group' && !hasGroup && { opacity: 0.5 }
+            ]}
             onPress={() => router.push('/new-transaction')}
+            disabled={activeTab === 'group' && !hasGroup}
           >
             <Ionicons name="add" size={16} color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.activeText} />
             <Text style={[styles.addButtonText, activeTab === 'group' && { color: APP_THEME.group.primaryText }]}>Agregar</Text>
