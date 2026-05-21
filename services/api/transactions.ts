@@ -40,6 +40,35 @@ export const getDistribution = async (): Promise<DistributionData[]> => {
   return adaptDistribution(response.data || []);
 };
 
+export const getGroupSummary = async (): Promise<SummaryResponse> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+
+  const startDate = `${year}-${month}-01`;
+  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+  const endDate = `${year}-${month}-${lastDay}`;
+
+  const response = await apiClient.get(`/transactions/family-group/summary?start_date=${startDate}&end_date=${endDate}`);
+  return adaptSummary(response.data || {});
+};
+
+export const getGroupTransactionsHistory = async (): Promise<Transaction[]> => {
+  const response = await apiClient.get('/transactions/family-group?limit=100');
+  return response.data;
+};
+
+export const getGroupDistribution = async (): Promise<DistributionData[]> => {
+  const response = await apiClient.get('/transactions/family-group/analytics/distribution');
+  return adaptDistribution(response.data || []);
+};
+
+export const getGroupIncomeVsExpenses = async (): Promise<IncomeExpenseData> => {
+  const timestamp = new Date().getTime();
+  const response = await apiClient.get(`/transactions/family-group/analytics/income-vs-expenses?t=${timestamp}`);
+  return adaptIncomeVsExpenses(response.data || []);
+};
+
 export const createTransaction = async (data: CreateTransactionPayload): Promise<Transaction> => {
   const response = await apiClient.post('/transactions', data);
   return response.data;
