@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { getFamilyGroup } from '../services/api/groups';
 import { FamilyGroupResponseDTO } from '../types/group';
 
@@ -21,9 +22,11 @@ export const useGroupData = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchGroupData();
-  }, [fetchGroupData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchGroupData();
+    }, [fetchGroupData])
+  );
 
   return {
     group,
