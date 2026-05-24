@@ -6,6 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LearnDetailView } from '../learn-detail';
@@ -13,6 +18,10 @@ import LearnQuizStep from '../learn-quiz';
 import { APP_THEME } from '@/constants/themes';
 import { getLearnModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
+import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
+import PlanningCard from '@/components/learn/PlanningCard';
+import { getFinancialPlanningTips } from '@/services/api/financialPlanning';
+import { FinancialPlanningTip } from '@/types/planningTypes';
 
 export default function AprenderScreen() {
   const [modules, setModules] = useState<LearnModule[]>([]);
@@ -21,9 +30,15 @@ export default function AprenderScreen() {
   const [step, setStep] = useState<'list' | 'detail' | 'quiz'>('list');
   const [selectedModuleSlug, setSelectedModuleSlug] = useState<string | null>(null);
   const [quizResultPercent, setQuizResultPercent] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'modules' | 'planning'>('modules');
+  const [planningTips, setPlanningTips] = useState<FinancialPlanningTip[]>([]);
+  const [planningLoading, setPlanningLoading] = useState(true);
+  const [planningError, setPlanningError] = useState<string | null>(null);
+  const [selectedPlanningTip, setSelectedPlanningTip] = useState<FinancialPlanningTip | null>(null);
 
   useEffect(() => {
     loadModules();
+    loadPlanningTips();
   }, []);
 
   async function loadModules() {
@@ -37,6 +52,20 @@ export default function AprenderScreen() {
       setError('No se pudieron cargar los módulos. Intenta de nuevo más tarde.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPlanningTips() {
+    try {
+      setPlanningLoading(true);
+      setPlanningError(null);
+      const data = await getFinancialPlanningTips();
+      setPlanningTips(data);
+    } catch (err) {
+      console.error('Error cargando planificacion:', err);
+      setPlanningError('No se pudo cargar la planificación. Intenta de nuevo más tarde.');
+    } finally {
+      setPlanningLoading(false);
     }
   }
 
@@ -83,6 +112,10 @@ export default function AprenderScreen() {
         </View>
       </View>
     </TouchableOpacity>
+  );
+
+  const renderPlanningTip = ({ item }: { item: FinancialPlanningTip }) => (
+    <PlanningCard tip={item} onPress={() => setSelectedPlanningTip(item)} />
   );
 
   if (loading) {
@@ -139,10 +172,42 @@ export default function AprenderScreen() {
     );
   }
 
+  const modalCategoryStyle = getPlanningCategoryStyle(selectedPlanningTip?.category ?? '');
+
   return (
     <View style={styles.container}>
-      <Text style={styles.screenTitle}>Módulos de aprendizaje</Text>
-      {modules.length === 0 ? (
+      <Text style={styles.screenTitle}>Aprender</Text>
+      <Text style={styles.screenSubtitle}>Educacion financiera con quizzes interactivos</Text>
+      <View style={styles.tabsWrapper}>
+        <ModulePlanningTabs value={activeTab} onChange={setActiveTab} />
+      </View>
+      {activeTab === 'planning' ? (
+        planningLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
+            <Text style={styles.loadingText}>Cargando planificación...</Text>
+          </View>
+        ) : planningError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{planningError}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadPlanningTips}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : planningTips.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No hay planificación disponible por el momento.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={planningTips}
+            keyExtractor={(item) => item.id}
+            renderItem={renderPlanningTip}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )
+      ) : modules.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No hay módulos disponibles por el momento.</Text>
         </View>
@@ -155,9 +220,132 @@ export default function AprenderScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+      <Modal visible={!!selectedPlanningTip} animationType="fade" transparent statusBarTranslucent>
+        <TouchableWithoutFeedback onPress={() => setSelectedPlanningTip(null)}>
+          <View style={styles.modalOverlay}>
+            <Pressable style={styles.modalCard} onPress={() => {}}>
+              {selectedPlanningTip && (
+                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalBadgeWrapper}>
+                      <View style={[styles.modalIconWrap, { backgroundColor: modalCategoryStyle.iconBg }]}>
+                        <Ionicons
+                          name={modalCategoryStyle.icon}
+                          size={18}
+                          color={modalCategoryStyle.badgeText}
+                        />
+                      </View>
+                      <View
+                        style={[styles.modalBadge, { backgroundColor: modalCategoryStyle.badgeBg }]}
+                      >
+                      <Text style={styles.modalBadgeText}>
+                        {formatCategory(selectedPlanningTip.category)}
+                      </Text>
+                    </View>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => setSelectedPlanningTip(null)}
+                      style={styles.modalCloseButton}
+                    >
+                      <Ionicons name="close" size={18} color={APP_THEME.text.secondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.modalTitle}>{selectedPlanningTip.title}</Text>
+                  <Text style={styles.modalDescription}>{selectedPlanningTip.description}</Text>
+
+                  <View style={styles.sectionBlock}>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="checkmark-circle" size={18} color="#2FE08F" />
+                      <Text style={styles.sectionTitle}>Puntos clave</Text>
+                    </View>
+                    {selectedPlanningTip.keyPoints.map((point, index) => (
+                      <View key={index} style={styles.listRow}>
+                        <View style={styles.numberBadge}>
+                          <Text style={styles.numberBadgeText}>{index + 1}</Text>
+                        </View>
+                        <Text style={styles.listText}>{point}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.sectionBlock}>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="arrow-forward-circle" size={18} color="#2FE08F" />
+                      <Text style={styles.sectionTitle}>Acciones a tomar</Text>
+                    </View>
+                    {selectedPlanningTip.actionItems.map((item, index) => (
+                      <View key={index} style={styles.listRow}>
+                        <Ionicons name="checkmark" size={16} color={APP_THEME.text.secondary} />
+                        <Text style={styles.listText}>{item}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {selectedPlanningTip.resources.length > 0 && (
+                    <View style={styles.sectionBlock}>
+                      <View style={styles.sectionHeader}>
+                        <Ionicons name="link" size={18} color={APP_THEME.text.secondary} />
+                        <Text style={styles.sectionTitle}>Recursos</Text>
+                      </View>
+                      {selectedPlanningTip.resources.map((resource, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.resourceRow}
+                          onPress={() => openResource(resource.url)}
+                        >
+                          <Text style={styles.resourceText}>{resource.title}</Text>
+                          <Ionicons name="open-outline" size={16} color={APP_THEME.button.primary.background} />
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </ScrollView>
+              )}
+              <TouchableOpacity
+                style={styles.modalActionButton}
+                onPress={() => setSelectedPlanningTip(null)}
+              >
+                <Text style={styles.modalActionText}>Entendido</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
+
+const formatCategory = (value: string) => {
+  if (!value) return 'General';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const getPlanningCategoryStyle = (value: string) => {
+  const key = value?.toLowerCase?.() ?? '';
+  const map: Record<string, { badgeBg: string; badgeText: string; iconBg: string; icon: keyof typeof Ionicons.glyphMap }> = {
+    emergencia: { badgeBg: '#2A1518', badgeText: '#FF5C6A', iconBg: '#13221B', icon: 'shield-checkmark-outline' },
+    metas: { badgeBg: '#112720', badgeText: '#2FE08F', iconBg: '#142420', icon: 'locate-outline' },
+    deudas: { badgeBg: '#2A1B12', badgeText: '#FF9B4A', iconBg: '#1E1713', icon: 'trending-down-outline' },
+    presupuesto: { badgeBg: '#12212F', badgeText: '#54B3FF', iconBg: '#141B23', icon: 'wallet-outline' },
+    retiro: { badgeBg: '#1D2030', badgeText: '#9EA8FF', iconBg: '#191C26', icon: 'leaf-outline' },
+    inversion: { badgeBg: '#1E1B2A', badgeText: '#C58BFF', iconBg: '#1A1724', icon: 'pulse-outline' },
+  };
+
+  return map[key] ?? {
+    badgeBg: '#1F2430',
+    badgeText: '#9AA3B2',
+    iconBg: '#151A22',
+    icon: 'reader-outline',
+  };
+};
+
+const openResource = async (url: string) => {
+  try {
+    await Linking.openURL(url);
+  } catch (err) {
+    console.warn('No se pudo abrir recurso:', err);
+  }
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -170,7 +358,15 @@ const styles = StyleSheet.create({
     color: APP_THEME.text.primary,
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  screenSubtitle: {
+    color: APP_THEME.text.secondary,
+    fontSize: 13,
+    marginBottom: 16,
+  },
+  tabsWrapper: {
+    marginBottom: 18,
   },
   listContent: {
     paddingBottom: 24,
@@ -304,5 +500,131 @@ const styles = StyleSheet.create({
   emptyText: {
     color: APP_THEME.text.secondary,
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 64,
+    paddingBottom: 96,
+  },
+  modalCard: {
+    backgroundColor: APP_THEME.background.primary,
+    borderRadius: 28,
+    width: '100%',
+    maxHeight: '100%',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    maxHeight: '78%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalBadgeWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  modalBadgeText: {
+    color: APP_THEME.text.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  modalCloseButton: {
+    padding: 6,
+  },
+  modalTitle: {
+    color: APP_THEME.text.primary,
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  modalDescription: {
+    color: APP_THEME.text.secondary,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  sectionBlock: {
+    marginBottom: 18,
+    gap: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionTitle: {
+    color: APP_THEME.text.primary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  numberBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0F2A1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  numberBadgeText: {
+    color: '#2FE08F',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  listText: {
+    color: APP_THEME.text.secondary,
+    fontSize: 14,
+    lineHeight: 20,
+    flex: 1,
+  },
+  resourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  resourceText: {
+    color: APP_THEME.text.primary,
+    fontSize: 14,
+    flex: 1,
+    marginRight: 8,
+  },
+  modalActionButton: {
+    backgroundColor: APP_THEME.button.primary.background,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  modalActionText: {
+    color: APP_THEME.button.primary.text,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
