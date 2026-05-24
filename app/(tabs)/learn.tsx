@@ -8,16 +8,19 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { LearnDetailView } from '../learn-detail';
+import LearnQuizStep from '../learn-quiz';
 import { APP_THEME } from '@/constants/themes';
 import { getLearnModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 
 export default function AprenderScreen() {
-  const router = useRouter();
   const [modules, setModules] = useState<LearnModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<'list' | 'detail' | 'quiz'>('list');
+  const [selectedModuleSlug, setSelectedModuleSlug] = useState<string | null>(null);
+  const [quizResultPercent, setQuizResultPercent] = useState<number | null>(null);
 
   useEffect(() => {
     loadModules();
@@ -38,16 +41,17 @@ export default function AprenderScreen() {
   }
 
 
+  const openModule = (slug: string) => {
+    setSelectedModuleSlug(slug);
+    setQuizResultPercent(null);
+    setStep('detail');
+  };
+
   const renderModule = ({ item }: { item: LearnModule }) => (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => {
-        router.push({
-          pathname: '/learn-detail',
-          params: { moduleSlug: item.slug },
-        });
-      }}
+      onPress={() => openModule(item.slug)}
     >
       {/* Fila 1: Dificultad, Tiempo, Flecha */}
       <View style={styles.row1}>
@@ -98,6 +102,40 @@ export default function AprenderScreen() {
           <Text style={styles.retryButtonText}>Reintentar</Text>
         </TouchableOpacity>
       </View>
+    );
+  }
+
+  // Step rendering: list | detail | quiz
+  if (step === 'detail' && selectedModuleSlug) {
+    return (
+      <LearnDetailView
+        moduleSlug={selectedModuleSlug}
+        onBack={() => {
+          setStep('list');
+          setSelectedModuleSlug(null);
+          setQuizResultPercent(null);
+        }}
+        onStartQuiz={() => setStep('quiz')}
+        quizResultPercent={quizResultPercent}
+      />
+    );
+  }
+
+  if (step === 'quiz' && selectedModuleSlug) {
+    return (
+      <LearnQuizStep
+        moduleSlug={selectedModuleSlug}
+        onBack={() => setStep('detail')}
+        onReturnToModules={() => {
+          setStep('list');
+          setSelectedModuleSlug(null);
+          setQuizResultPercent(null);
+        }}
+        onQuizComplete={(percent: number) => {
+          setQuizResultPercent(percent);
+          setStep('detail');
+        }}
+      />
     );
   }
 

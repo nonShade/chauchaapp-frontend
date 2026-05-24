@@ -30,6 +30,8 @@ interface LearnModuleQuestion {
     question: string;
     options: string[];
     explanation: string;
+    correctAnswer?: string;
+    correctOptionIndex?: number;
 }
 
 interface LearnModuleQuiz {
@@ -61,7 +63,7 @@ interface QuizAttempt {
     completedAt: string;
 }
 
-interface ModuleProgress {
+export interface ModuleProgress {
     userId: string;
     moduleId: string;
     status: 'not_started' | 'in_progress' | 'completed';
