@@ -18,6 +18,11 @@ import NewsCard from '@/components/home/NewsCard';
 import { NewsSkeleton } from '@/components/home/NewsSkeleton';
 import { newsService, Topic, NewsAnalysis } from '@/services/api/news';
 
+const NEWS_TAG_COLORS = {
+  bg: '#1a2a3a',
+  text: '#55aaff',
+};
+
 function getUrgencyColor(urgency?: string) {
   switch (urgency) {
     case 'alto':
@@ -239,8 +244,21 @@ export default function NoticiasScreen() {
 
               <View style={styles.tagsContainer}>
                 {modalNews?.etiquetas?.map((tag, idx) => (
-                  <View key={idx} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
+                  <View
+                    key={idx}
+                    style={[
+                      styles.tag,
+                      { backgroundColor: NEWS_TAG_COLORS.bg },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.tagText,
+                        { color: NEWS_TAG_COLORS.text },
+                      ]}
+                    >
+                      {tag}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -466,13 +484,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tag: {
-    backgroundColor: APP_THEME.cards.news.background,
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
   },
   tagText: {
-    color: APP_THEME.cards.news.accent,
     fontWeight: '600',
     fontSize: 12,
   },

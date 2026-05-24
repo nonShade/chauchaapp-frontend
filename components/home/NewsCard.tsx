@@ -8,20 +8,6 @@ const CATEGORY_COLOR = {
   text: "#55aaff",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  "Salario Base": "wallet",
-  Commodities: "trending-up",
-  Impuestos: "receipt",
-  PYME: "briefcase",
-  Logistica: "car",
-  Monetaria: "logo-usd",
-  Economia: "stats-chart",
-};
-
-function getCategoryIcon(category: string) {
-  return CATEGORY_ICONS[category] || "tag";
-}
-
 function getUrgencyColor(urgency: string) {
   switch (urgency) {
     case "alto":
@@ -157,11 +143,6 @@ export default function NewsCard({
                     { backgroundColor: CATEGORY_COLOR.bg },
                   ]}
                 >
-                  <Ionicons
-                    name={getCategoryIcon(tag)}
-                    size={12}
-                    color={CATEGORY_COLOR.text}
-                  />
                   <Text
                     style={[
                       styles.categoryTagText,
