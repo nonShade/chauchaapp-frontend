@@ -24,14 +24,13 @@ interface LearnModuleTopic {
     name: string;
 }
 
-interface LearnModuleQuestion {
+export interface LearnModuleQuestion {
     id: string;
     type: string;
     question: string;
     options: string[];
     explanation: string;
-    correctAnswer?: string;
-    correctOptionIndex?: number;
+    correctAnswer: number;
 }
 
 interface LearnModuleQuiz {

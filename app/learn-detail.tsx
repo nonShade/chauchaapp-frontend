@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
   const [activeBlockIndex, setActiveBlockIndex] = useState(0);
   const [completedSectionIds, setCompletedSectionIds] = useState<string[]>([]);
   const [isStartingQuiz, setIsStartingQuiz] = useState(false);
+  const progressStartedRef = useRef(false);
 
   const introductionExists = Boolean(moduleData?.module.content?.introduction);
   const sectionCount = moduleData?.module.content?.sections?.length ?? 0;
@@ -65,7 +66,9 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
   useEffect(() => {
     if (!moduleData) return;
     setBlockPositions(Array(totalReadBlocks).fill(0));
-    setActiveBlockIndex(0);
+    if (!progressStartedRef.current) {
+      setActiveBlockIndex(0);
+    }
   }, [moduleData, totalReadBlocks]);
 
   const updateBlockPosition = (index: number, y: number) => {
@@ -79,11 +82,19 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
   const saveCompletedSection = useCallback(
     async (sectionId: string) => {
       const moduleId = moduleData?.module?.id;
-      if (!moduleId || completedSectionIds.includes(sectionId) || !sectionIds.includes(sectionId)) return;
+      if (!moduleId || !sectionIds.includes(sectionId)) return;
+
+      // If server already reports this section as completed, skip.
+      const serverCompleted = moduleData?.progress?.completedSections ?? [];
+      if (serverCompleted.includes(sectionId) || completedSectionIds.includes(sectionId)) return;
+
+      // Optimistically mark as completed to avoid duplicate PATCH calls.
+      setCompletedSectionIds((prev) => (prev.includes(sectionId) ? prev : [...prev, sectionId]));
       try {
         await completeModuleSection(moduleId, sectionId);
-        setCompletedSectionIds((prev) => [...prev, sectionId]);
       } catch (err) {
+        // Revert optimistic update on failure
+        setCompletedSectionIds((prev) => prev.filter((id) => id !== sectionId));
         console.warn('No se pudo guardar sección completada:', sectionId, err);
       }
     },
@@ -93,23 +104,63 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
   const startProgressIfNeeded = useCallback(async () => {
     const moduleId = moduleData?.module?.id;
     if (!moduleId) return;
+    // Prevent multiple starts in the same view lifecycle
+    if (progressStartedRef.current) return;
+
+    progressStartedRef.current = true;
+
     try {
       const progress = await startModuleProgress(moduleId);
-      setModuleData((prev) => (prev ? { ...prev, progress } : prev));
-      setCompletedSectionIds(progress.completedSections ?? []);
+
+      // Merge server progress with existing progress to avoid overwriting
+      // previously returned completed sections or a higher percentage.
+      const existingProgress = moduleData?.progress;
+      const existingCompleted = existingProgress?.completedSections ?? [];
+      const serverCompleted = progress?.completedSections ?? [];
+
+      const mergedCompleted = serverCompleted.length > 0 ? serverCompleted : existingCompleted;
+
+      const mergedProgressPercentage = Math.max(
+        progress?.progressPercentage ?? 0,
+        existingProgress?.progressPercentage ?? 0,
+      );
+
+      const mergedProgress = {
+        ...(existingProgress || {}),
+        ...(progress || {}),
+        completedSections: mergedCompleted,
+        progressPercentage: mergedProgressPercentage,
+      };
+
+      setModuleData((prev) => (prev ? { ...prev, progress: mergedProgress } : prev));
+      setCompletedSectionIds(mergedCompleted);
+
+      // If there are completed sections, try to set the active block index
+      // to the last completed section so the UI reflects saved progress.
+      if (mergedProgress.status === 'completed') {
+        setActiveBlockIndex(Math.max(totalReadBlocks - 1, 0));
+      } else if (mergedCompleted.length > 0) {
+        const furthestIdx = mergedCompleted.reduce((maxIdx, sectionId) => {
+          const idx = blockIds.indexOf(sectionId);
+          return idx > maxIdx ? idx : maxIdx;
+        }, -1);
+        if (furthestIdx >= 0) {
+          setActiveBlockIndex(Math.min(furthestIdx, Math.max(totalReadBlocks - 1, 0)));
+        }
+      }
     } catch (err) {
       console.warn('No se pudo iniciar progreso del módulo:', err);
     }
-  }, [moduleData]);
+  }, [moduleData, blockIds, totalReadBlocks]);
 
   const syncCurrentProgress = useCallback(async () => {
     if (!moduleData || blockIds.length === 0) return;
-    await startProgressIfNeeded();
     const sectionIdsToSave = blockIds
       .slice(0, activeBlockIndex + 1)
       .filter((id) => sectionIds.includes(id) && !completedSectionIds.includes(id));
     await Promise.all(sectionIdsToSave.map((id) => saveCompletedSection(id)));
-  }, [activeBlockIndex, blockIds, completedSectionIds, moduleData, saveCompletedSection, sectionIds, startProgressIfNeeded]);
+    console.debug('[learn-detail] syncCurrentProgress finished');
+  }, [activeBlockIndex, blockIds, completedSectionIds, moduleData, saveCompletedSection, sectionIds]);
 
   const handleBack = useCallback(async () => {
     await syncCurrentProgress();
@@ -118,15 +169,25 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
     }
   }, [onBack, syncCurrentProgress]);
 
-  useEffect(() => {
-    if (!moduleData) return;
-    setCompletedSectionIds(moduleData.progress.completedSections ?? []);
-  }, [moduleData]);
+useEffect(() => {
+  progressStartedRef.current = false;
+}, [moduleSlug]);
 
-  useEffect(() => {
-    if (!moduleData) return;
-    startProgressIfNeeded();
-  }, [moduleData, startProgressIfNeeded]);
+useEffect(() => {
+  if (!moduleData) return;
+  // Solo sincronizar completedSectionIds si aún no se ha iniciado el progreso
+  // (antes de que startProgressIfNeeded lo haga con datos del servidor)
+  if (!progressStartedRef.current) {
+    setCompletedSectionIds(moduleData.progress.completedSections ?? []);
+  }
+}, [moduleData?.module?.id]); // ← dependencia estable, no el objeto entero
+
+useEffect(() => {
+  if (!moduleData) return;
+  if (progressStartedRef.current) return;
+
+  startProgressIfNeeded();
+}, [moduleData?.module?.id]); // ← misma dependencia estable
 
   useEffect(() => {
     if (!moduleData || !blockIds.length) return;
@@ -144,6 +205,15 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
     const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
     return () => subscription.remove();
   }, [handleBack]);
+
+  // Ensure we sync progress when the component unmounts (e.g. user switches tabs)
+  useEffect(() => {
+    return () => {
+      // fire-and-forget: sync progress on unmount
+      console.debug('[learn-detail] unmount -> syncing progress');
+      void syncCurrentProgress();
+    };
+  }, [syncCurrentProgress]);
 
   const showConfirmDialog = async (title: string, message: string) => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
@@ -167,7 +237,7 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
     if (!onStartQuiz) return;
     const confirmed = await showConfirmDialog(
       'Comenzar quiz',
-      '¿Estás seguro de que quieres empezar el quiz? Si sales antes no se guardará el intento del quiz.',
+      '¿Estás seguro de que quieres empezar el quiz? Si sales antes se guardara el quiz con tus respuestas hasta ese punto y las demas se relleneran como incorrectas.',
     );
 
     if (!confirmed) return;
@@ -189,17 +259,16 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
     if (totalReadBlocks === 0) return 0;
     return Math.round(90 * Math.min(activeBlockIndex + 1, totalReadBlocks) / totalReadBlocks);
   };
+  const moduleStatus = moduleData?.progress?.status;
 
   const displayedProgress = Math.min(
     100,
-    quizResultPercent != null
-      ? 90 + Math.round((quizResultPercent / 100) * 10)
-      : completedServerSectionProgress > 0
-        ? completedServerSectionProgress
-        : computeBaseReadProgress(),
+    moduleStatus === 'completed'
+      ? 100
+      : quizResultPercent != null
+        ? 90 + Math.round((quizResultPercent / 100) * 10)
+        : Math.max(completedServerSectionProgress, computeBaseReadProgress()),
   );
-
-  const progressLabel = quizResultPercent == null ? 'Progreso de lectura' : 'Progreso total';
 
   const handleScroll = (event: any) => {
     const y = event.nativeEvent.contentOffset.y;

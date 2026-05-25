@@ -16,7 +16,7 @@ import {
   getLearnModuleDetail,
   submitQuizAttempt,
 } from '@/services/api/learnModules';
-import { LearnModuleDetailResponse } from '@/types/modulesTypes';
+import { LearnModuleDetailResponse, LearnModuleQuestion } from '@/types/modulesTypes';
 
 interface LearnQuizStepProps {
   moduleSlug?: string;
@@ -64,20 +64,11 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
 
-  const determineCorrectness = (question: any, optionIndex: number) => {
-    if (question.correctOptionIndex != null) {
-      return optionIndex === question.correctOptionIndex;
-    }
-    if (question.correctAnswer != null) {
-      return question.options[optionIndex] === question.correctAnswer;
+  const determineCorrectness = (question: LearnModuleQuestion, optionIndex: number): boolean | null => {
+    if (question.correctAnswer != null && typeof question.correctAnswer === 'number') {
+      return optionIndex === question.correctAnswer;
     }
     return null;
-  };
-
-  const getQuestionJustification = (question: any) => {
-    return (
-      question.justification || question.rationale || question.reason || 'No hay justificación disponible.'
-    );
   };
 
   const getQuestionSource = (question: any) => {
@@ -134,7 +125,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const handleLeaveQuiz = useCallback(async () => {
     const confirmed = await showConfirmDialog(
       'Salir del quiz',
-      '¿Estás seguro de que quieres salir en mitad del quiz? Ten en cuenta que si sales del quiz entonces tu progreso no se guardará y contará como un intento fallido.',
+      '¿Estás seguro de que quieres salir en mitad del quiz? Ten en cuenta que si sales del quiz entonces tu progreso quedara hasta la ultima respuesta y las demas se guardaran como incorrectas.',
     );
     if (!confirmed) return;
 
@@ -165,7 +156,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
 
   const confirmAnswer = () => {
     if (selectedIndex == null || !currentQuestion) return;
-    const isCorrect = determineCorrectness(currentQuestion as any, selectedIndex);
+    const isCorrect = determineCorrectness(currentQuestion as LearnModuleQuestion, selectedIndex);
     setAnswers((prev) => {
       const next = prev.slice(0, currentQuestionIndex);
       next.push({
@@ -235,7 +226,6 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const currentAnswer = answers[currentQuestionIndex];
   const buttonText = !feedbackVisible ? 'Confirmar respuesta' : isLastQuestion ? 'Ver resultados' : 'Siguiente respuesta';
   const questionSource = getQuestionSource(currentQuestion as any);
-  const questionJustification = getQuestionJustification(currentQuestion as any);
   const questionExplanation = currentQuestion?.explanation || 'No hay explicación disponible.';
 
   const renderResult = () => (
@@ -347,7 +337,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
                           color="#fff"
                         />
                       ) : (
-                        <Text style={styles.optionLetter}>{String.fromCharCode(65 + idx)}</Text>
+                        <Text style={selected ? styles.optionLetterSelected : styles.optionLetter}>{String.fromCharCode(65 + idx)}</Text>
                       )}
                     </View>
                     <Text style={styles.optionText}>{option}</Text>
@@ -361,8 +351,6 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
             <View style={styles.feedbackCard}>
               <Text style={styles.feedbackTitle}>Explicación</Text>
               <Text style={styles.feedbackText}>{questionExplanation}</Text>
-              <Text style={styles.feedbackTitle}>Justificación</Text>
-              <Text style={styles.feedbackText}>{questionJustification}</Text>
               {questionSource ? (
                 <View style={styles.feedbackSourceRow}>
                   <Ionicons name="link-outline" size={16} color={APP_THEME.text.secondary} />
@@ -643,16 +631,16 @@ const styles = StyleSheet.create({
     backgroundColor: APP_THEME.background.primary,
   },
   optionSelected: {
-    borderColor: 'lab(59 -51.76 31.73)',
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    borderColor: '#3FD364',
+    backgroundColor: '#111714',
   },
   optionCorrect: {
-    borderColor: 'lab(59 -51.76 31.73)',
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    borderColor: '#3FD364',
+    backgroundColor: '#111714',
   },
   optionWrong: {
-    borderColor: 'lab(54 69.81 43.62)',
-    backgroundColor: 'lab(54 69.81 43.62)',
+    borderColor: '#FF453A',
+    backgroundColor: '#111714',
   },
   optionLabelRow: {
     flexDirection: 'row',
@@ -666,8 +654,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'lab(13 -0.83 -5.51)',
-    backgroundColor: 'lab(13 -0.83 -5.51)',
+    borderColor: '#1A1E24',
+    backgroundColor: '#1A1E24',
   },
   optionLetterLabel: {
     paddingHorizontal: 0,
@@ -677,19 +665,23 @@ const styles = StyleSheet.create({
     height: 34,
   },
   optionLabelSelected: {
-    borderColor: 'lab(59 -51.76 31.73)',
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    borderColor: '#3FD364',
+    backgroundColor: '#3FD364',
   },
   optionLabelCorrect: {
-    borderColor: 'lab(59 -51.76 31.73)',
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    borderColor: '#3FD364',
+    backgroundColor: '#3FD364',
   },
   optionLabelWrong: {
-    borderColor: 'lab(54 69.81 43.62)',
-    backgroundColor: 'lab(54 69.81 43.62)',
+    borderColor: '#FF453A',
+    backgroundColor: '#FF453A',
   },
   optionLetter: {
-    color: APP_THEME.text.primary,
+    color: '#93979F',
+    fontWeight: '700',
+  },
+  optionLetterSelected: {
+    color: '#000',
     fontWeight: '700',
   },
   optionText: {
