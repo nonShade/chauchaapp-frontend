@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Act
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
-import PersonalSummaryChart from '@/components/cartola/individual/PersonalSummaryChart';
-import MonthAccordion from '@/components/cartola/individual/MonthAccordion';
-import PersonalTotals from '@/components/cartola/individual/PersonalTotals';
-import CategoryExpenses from '@/components/cartola/individual/CategoryExpenses';
+import PersonalSummaryChart from '@/components/cartola/shared/PersonalSummaryChart';
+import MonthAccordion from '@/components/cartola/shared/MonthAccordion';
+import PersonalTotals from '@/components/cartola/shared/PersonalTotals';
+import CategoryExpenses from '@/components/cartola/shared/CategoryExpenses';
 import RecentTransactions from '@/components/cartola/shared/RecentTransactions';
 import { useCartolaData } from '@/hooks/useCartolaData';
 import { deleteTransaction } from '@/services/api/transactions';
