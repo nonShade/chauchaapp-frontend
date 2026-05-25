@@ -11,6 +11,7 @@ interface MonthAccordionProps {
   summary?: any;
   onDelete?: (transactionId: string) => void;
   onRefresh?: () => void;
+  isGroup?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -28,7 +29,7 @@ const formatDate = (dateString: string) => {
   return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
 };
 
-export default function MonthAccordion({ transactions, summary, onDelete, onRefresh }: MonthAccordionProps) {
+export default function MonthAccordion({ transactions, summary, onDelete, onRefresh, isGroup }: MonthAccordionProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState('');
   const [editAmount, setEditAmount] = useState('');
@@ -157,6 +158,9 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                               ) : (
                                   <>
                                     <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Ingreso')}</Text>
+                                    {isGroup && (item as any).user_name ? (
+                                      <Text style={styles.detailItemDescription}>Por: {(item as any).user_name}</Text>
+                                    ) : null}
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
@@ -176,7 +180,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 </Text>
                               )}
 
-                              {!isVirtual && (
+                              {!isVirtual && !isGroup && (
                                 <View style={styles.actionsRow}>
                                   {isEditing ? (
                                     <>
@@ -240,6 +244,9 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                               ) : (
                                   <>
                                     <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Gasto')}</Text>
+                                    {isGroup && (item as any).user_name ? (
+                                      <Text style={styles.detailItemDescription}>Por: {(item as any).user_name}</Text>
+                                    ) : null}
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
@@ -259,35 +266,37 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 </Text>
                               )}
 
-                              <View style={styles.actionsRow}>
-                                {isEditing ? (
-                                  <>
-                                    {isSaving ? (
-                                      <ActivityIndicator size="small" color={APP_THEME.status.success} />
-                                    ) : (
-                                      <TouchableOpacity onPress={() => handleSave(item.id)}>
-                                        <Ionicons name="checkmark-circle" size={22} color={APP_THEME.status.success} />
+                              {!isGroup && (
+                                <View style={styles.actionsRow}>
+                                  {isEditing ? (
+                                    <>
+                                      {isSaving ? (
+                                        <ActivityIndicator size="small" color={APP_THEME.status.success} />
+                                      ) : (
+                                        <TouchableOpacity onPress={() => handleSave(item.id)}>
+                                          <Ionicons name="checkmark-circle" size={22} color={APP_THEME.status.success} />
+                                        </TouchableOpacity>
+                                      )}
+                                      <TouchableOpacity onPress={cancelEditing}>
+                                        <Ionicons name="close-circle-outline" size={22} color={APP_THEME.text.secondary} />
                                       </TouchableOpacity>
-                                    )}
-                                    <TouchableOpacity onPress={cancelEditing}>
-                                      <Ionicons name="close-circle-outline" size={22} color={APP_THEME.text.secondary} />
-                                    </TouchableOpacity>
-                                  </>
-                                ) : (
-                                  <>
-                                    <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
-                                      <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.actionButton} onPress={() => {
-                                      const finalId = item.id || (item as any).transaction_id;
-                                      console.log('[MonthAccordion] Requesting delete for:', finalId);
-                                      onDelete?.(finalId);
-                                    }}>
-                                      <Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} />
-                                    </TouchableOpacity>
-                                  </>
-                                )}
-                              </View>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
+                                        <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
+                                      </TouchableOpacity>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => {
+                                        const finalId = item.id || (item as any).transaction_id;
+                                        console.log('[MonthAccordion] Requesting delete for:', finalId);
+                                        onDelete?.(finalId);
+                                      }}>
+                                        <Ionicons name="trash-outline" size={14} color={APP_THEME.status.error} />
+                                      </TouchableOpacity>
+                                    </>
+                                  )}
+                                </View>
+                              )}
                             </View>
                           </View>
                         );

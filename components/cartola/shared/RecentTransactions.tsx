@@ -10,6 +10,7 @@ interface RecentTransactionsProps {
   transactions: Transaction[];
   onRefresh?: () => void;
   onDelete?: (transactionId: string) => void;
+  isGroup?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -25,7 +26,7 @@ const formatDate = (dateString: string) => {
   return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
 };
 
-export default function RecentTransactions({ transactions, onRefresh, onDelete }: RecentTransactionsProps) {
+export default function RecentTransactions({ transactions, onRefresh, onDelete, isGroup }: RecentTransactionsProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState('');
   const [editAmount, setEditAmount] = useState('');
@@ -68,8 +69,8 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="person-outline" size={18} color={APP_THEME.cards.balance.tagText} />
-        <Text style={styles.title}>Últimos movimientos personales</Text>
+        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={18} color={APP_THEME.cards.balance.tagText} />
+        <Text style={styles.title}>{isGroup ? "Últimos movimientos del grupo" : "Últimos movimientos personales"}</Text>
       </View>
 
       <View style={styles.list}>
@@ -102,6 +103,9 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
                     ) : (
                       <>
                         <Text style={styles.itemName}>{item.category || (item as any).category_name || 'Otros'}</Text>
+                        {isGroup && (item as any).user_name ? (
+                          <Text style={styles.itemDescription}>Por: {(item as any).user_name}</Text>
+                        ) : null}
                         {item.description ? <Text style={styles.itemDescription}>{item.description}</Text> : null}
                         <View style={styles.dateRow}>
                           <Ionicons name="calendar-outline" size={10} color={APP_THEME.text.secondary} />
@@ -129,32 +133,34 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete }
                   )}
 
                   <View style={styles.actionsRow}>
-                    {isEditing ? (
-                      <>
-                        {isSaving ? (
-                          <ActivityIndicator size="small" color={APP_THEME.status.success} />
-                        ) : (
-                          <TouchableOpacity onPress={() => handleSave(item.id)}>
-                            <Ionicons name="checkmark-circle" size={20} color={APP_THEME.status.success} />
+                    {!isGroup && (
+                      isEditing ? (
+                        <>
+                          {isSaving ? (
+                            <ActivityIndicator size="small" color={APP_THEME.status.success} />
+                          ) : (
+                            <TouchableOpacity onPress={() => handleSave(item.id)}>
+                              <Ionicons name="checkmark-circle" size={20} color={APP_THEME.status.success} />
+                            </TouchableOpacity>
+                          )}
+                          <TouchableOpacity onPress={cancelEditing}>
+                            <Ionicons name="close-circle-outline" size={20} color={APP_THEME.text.secondary} />
                           </TouchableOpacity>
-                        )}
-                        <TouchableOpacity onPress={cancelEditing}>
-                          <Ionicons name="close-circle-outline" size={20} color={APP_THEME.text.secondary} />
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <>
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => startEditing(item)}>
-                          <Ionicons name="pencil-outline" size={13} color={APP_THEME.text.secondary} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionBtn} onPress={() => {
-                          const finalId = item.id || (item as any).transaction_id;
-                          console.log('[RecentTransactions] Requesting delete for:', finalId);
-                          onDelete?.(finalId);
-                        }}>
-                          <Ionicons name="trash-outline" size={13} color={APP_THEME.status.error} />
-                        </TouchableOpacity>
-                      </>
+                        </>
+                      ) : (
+                        <>
+                          <TouchableOpacity style={styles.actionBtn} onPress={() => startEditing(item)}>
+                            <Ionicons name="pencil-outline" size={13} color={APP_THEME.text.secondary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.actionBtn} onPress={() => {
+                            const finalId = item.id || (item as any).transaction_id;
+                            console.log('[RecentTransactions] Requesting delete for:', finalId);
+                            onDelete?.(finalId);
+                          }}>
+                            <Ionicons name="trash-outline" size={13} color={APP_THEME.status.error} />
+                          </TouchableOpacity>
+                        </>
+                      )
                     )}
                   </View>
                 </View>

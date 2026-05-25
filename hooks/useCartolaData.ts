@@ -1,11 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   getSummary,
   getTransactionsHistory,
   getIncomeVsExpenses,
   getDistribution,
   getTransactionCategories,
-  getTransactionTypes
+  getTransactionTypes,
+  getGroupSummary,
+  getGroupTransactionsHistory,
+  getGroupDistribution,
+  getGroupIncomeVsExpenses
 } from '../services/api/transactions';
 import {
   SummaryResponse,
@@ -82,8 +87,8 @@ function buildDistributionFromTransactions(txList: any[], totalExpense: number, 
     }));
 }
 
-export function useCartolaData() {
-  const [isLoading, setIsLoading] = useState(true);
+export function useCartolaData(isGroup: boolean = false, skipFetch: boolean = false) {
+  const [isLoading, setIsLoading] = useState(!skipFetch);
   const [error, setError] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
@@ -94,7 +99,20 @@ export function useCartolaData() {
   const [incomeVsExpenses, setIncomeVsExpenses] = useState<IncomeExpenseData | null>(null);
   const [distribution, setDistribution] = useState<DistributionData[]>([]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (abortSignal?: AbortSignal) => {
+    if (skipFetch) {
+      setIsLoading(false);
+      setSummary(null);
+      setTransactions([]);
+      setCalculatedBalance(0);
+      setCalculatedIncome(0);
+      setCalculatedExpense(0);
+      setIncomeVsExpenses(null);
+      setDistribution([]);
+      setError(null);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -106,13 +124,15 @@ export function useCartolaData() {
         categoriesData,
         typesData
       ] = await Promise.all([
-        getSummary(),
-        getTransactionsHistory(),
-        getIncomeVsExpenses(),
-        getDistribution(),
+        isGroup ? getGroupSummary() : getSummary(),
+        isGroup ? getGroupTransactionsHistory() : getTransactionsHistory(),
+        isGroup ? getGroupIncomeVsExpenses() : getIncomeVsExpenses(),
+        isGroup ? getGroupDistribution() : getDistribution(),
         getTransactionCategories(),
         getTransactionTypes()
       ]);
+
+      if (abortSignal?.aborted) return;
 
       const typeLookup: Record<string, 'INCOME' | 'EXPENSE'> = {};
       if (Array.isArray(typesData)) {
@@ -168,46 +188,33 @@ export function useCartolaData() {
 
       const finalDistribution = buildDistributionFromTransactions(txList, expenseAcc, catLookup, typeLookup);
 
-      // Calcular income vs expenses de forma local hasta resolver 
-      const monthlyDataMap: Record<string, { income: number, expenses: number }> = {};
-      if (Array.isArray(normalizedTransactions)) {
-        normalizedTransactions.forEach((tx: any) => {
-          const date = new Date(tx.date);
-          const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          if (!monthlyDataMap[key]) monthlyDataMap[key] = { income: 0, expenses: 0 };
-          if (tx.type === 'INCOME') {
-            monthlyDataMap[key].income += tx.amount;
-          } else {
-            monthlyDataMap[key].expenses += tx.amount;
-          }
-        });
-      }
-      const localRawData = Object.entries(monthlyDataMap).map(([month, data]) => ({
-        month,
-        income: data.income,
-        expenses: data.expenses
-      }));
-      const { adaptIncomeVsExpenses } = require('../services/api/adapters');
-      const localIncomeVsExpensesData = adaptIncomeVsExpenses(localRawData);
-
       setSummary(summaryData);
       setTransactions(normalizedTransactions);
       setCalculatedBalance(balanceAcc);
       setCalculatedIncome(incomeAcc);
       setCalculatedExpense(expenseAcc);
-      setIncomeVsExpenses(localIncomeVsExpensesData);
+      setIncomeVsExpenses(incomeVsExpensesData);
       setDistribution(finalDistribution);
     } catch (err: any) {
+      if (abortSignal?.aborted) return;
       console.error('Error fetching cartola data:', err);
       setError(err.message || 'Error al cargar los datos de la cartola.');
     } finally {
-      setIsLoading(false);
+      if (!abortSignal?.aborted) {
+        setIsLoading(false);
+      }
     }
-  }, []);
+  }, [isGroup, skipFetch]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      const controller = new AbortController();
+      fetchData(controller.signal);
+      return () => {
+        controller.abort();
+      };
+    }, [fetchData])
+  );
 
   return {
     isLoading,

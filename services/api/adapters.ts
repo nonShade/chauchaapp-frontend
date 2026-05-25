@@ -25,23 +25,18 @@ const MONTH_NAMES_SHORT: Record<string, string> = {
 };
 
 export const adaptIncomeVsExpenses = (raw: any): IncomeExpenseData => {
-  // Aceptar varios formatos: array directo, { data: [] }, o un objeto de claves
-  const items: any[] = Array.isArray(raw)
-    ? raw
-    : Array.isArray(raw?.data)
-    ? raw.data
-    : Array.isArray(Object.values(raw || {}))
-    ? Object.values(raw || {})
-    : [];
-
-  const dataMap: Record<string, { income: number; expense: number }> = {};
-
-  if (!Array.isArray(items) || items.length === 0) {
-    return { labels: [], income: [], expense: [] };
+  if (raw && Array.isArray(raw.labels) && Array.isArray(raw.income) && Array.isArray(raw.expense)) {
+    return {
+      labels: raw.labels,
+      income: raw.income.map((v: any) => parseFloat(v) || 0),
+      expense: raw.expense.map((v: any) => parseFloat(v) || 0),
+    };
   }
 
-  items.forEach(item => {
-    const key = item?.month;
+  const rawList = Array.isArray(raw) ? raw : [];
+  const dataMap: Record<string, { income: number; expense: number }> = {};
+  rawList.forEach(item => {
+    const key = item.month;
     if (key) {
       dataMap[key] = {
         income: parseFloat(item.income) || 0,

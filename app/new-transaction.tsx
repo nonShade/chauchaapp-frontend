@@ -25,7 +25,7 @@ const formatDateDisplay = (iso: string) => {
 };
 
 export default function NewTransactionScreen() {
-  const { id: editId, mode } = useLocalSearchParams<{ id?: string; mode?: string }>();
+  const { id: editId, mode, group } = useLocalSearchParams<{ id?: string; mode?: string; group?: string }>();
   const isEditMode = mode === 'edit' && !!editId;
 
   const [gastoTypeId, setGastoTypeId] = useState('');
@@ -175,7 +175,7 @@ export default function NewTransactionScreen() {
     const categoryId = categoryUUIDs[category.toLowerCase()];
     const frequencyId = frequency === 'monthly' ? monthlyFreqId : onceFreqId;
 
-    const payload = {
+    const payload: any = {
       amount: parseFloat(amount),
       transaction_type_id: typeId,
       ...(categoryId ? { transaction_category_id: categoryId } : {}),
@@ -183,6 +183,10 @@ export default function NewTransactionScreen() {
       ...(description.trim() ? { description: description.trim() } : {}),
       transaction_date: date,
     };
+
+    if (group === 'true') {
+      payload.is_group_transaction = true;
+    }
 
     try {
       setIsSaving(true);
