@@ -1,0 +1,7 @@
+import apiClient from './apiClient';
+import { FinancialPlanningResponse, FinancialPlanningTip } from '@/types/planningTypes';
+
+export const getFinancialPlanningTips = async (): Promise<FinancialPlanningTip[]> => {
+  const response = await apiClient.get<FinancialPlanningResponse>('/financial-planning');
+  return response.data.financialPlanningTips || [];
+};
