@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput, Modal, Pressable } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -6,6 +6,8 @@ import * as SecureStore from 'expo-secure-store';
 import { APP_THEME } from '@/constants/themes';
 import { useAuth } from '@/contexts/AuthContext';
 import { getIncomeTypes, getUserProfile, updateUserProfile, getNewsTopics, logoutUser, calculateAge, formatCLP, IncomeTypeOption, TopicOption, UserProfile as ApiUserProfile } from '@/services/api/userProfile';
+import { familyGroupService } from '@/services/api/familyGroup';
+import { FamilyGroup } from '@/types/family';
 
 const INCOME_TYPE_CHOICES = [
   { label: 'sueldo fijo', searchTerms: ['sueldo fijo', 'sueldo fijo'] },
@@ -42,6 +44,7 @@ export default function PerfilScreen() {
   const [newsTopics, setNewsTopics] = useState<TopicOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -50,6 +53,13 @@ export default function PerfilScreen() {
   const [draftMonthlyIncome, setDraftMonthlyIncome] = useState('');
 
   const [selectedTopics, setSelectedTopics] = useState<Record<string, boolean>>({});
+  const [familyGroup, setFamilyGroup] = useState<FamilyGroup | null>(null);
+  const [familyGroupName, setFamilyGroupName] = useState('');
+  const [creatingFamily, setCreatingFamily] = useState(false);
+  const [showCreateFamilyModal, setShowCreateFamilyModal] = useState(false);
+  const [showManageFamilyModal, setShowManageFamilyModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   useEffect(() => {
     if (!accessToken) {
@@ -61,7 +71,9 @@ export default function PerfilScreen() {
 
     async function loadProfile() {
       try {
-        const [profile, incomeTypesData, newsTopicsData] = await Promise.all([
+        setLoading(true);
+        setError(null);
+        const [profileData, incomeTypesData, newsTopicsData] = await Promise.all([
           getUserProfile(token),
           getIncomeTypes(),
           getNewsTopics(),
@@ -70,16 +82,26 @@ export default function PerfilScreen() {
         setIncomeTypes(incomeTypesData);
         setNewsTopics(newsTopicsData);
 
-        if (profile) {
-          setUserProfile(profile);
-          setDraftName(`${profile.first_name} ${profile.last_name}`.trim());
-          setDraftEmail(profile.email);
-          setDraftIncomeTypeId(profile.income_type_id);
-          setDraftMonthlyIncome(String(Math.round(Number(profile.monthly_income || '0'))));
+        if (profileData) {
+          setUserProfile(profileData);
+          setDraftName(`${profileData.first_name} ${profileData.last_name}`.trim());
+          setDraftEmail(profileData.email);
+          setDraftIncomeTypeId(profileData.income_type_id);
+          setDraftMonthlyIncome(String(Math.round(Number(profileData.monthly_income || '0'))));
+
+          // Cargar grupo familiar
+          try {
+            const familyGroupData = await familyGroupService.getFamilyGroup(token);
+            if (familyGroupData) {
+              setFamilyGroup(familyGroupData);
+            }
+          } catch (familyError) {
+            console.log('Usuario aún no tiene grupo familiar');
+          }
 
           const topicsMap: Record<string, boolean> = {};
           newsTopicsData.forEach((topic) => {
-            topicsMap[topic.id] = profile.topics.includes(topic.id);
+            topicsMap[topic.id] = profileData.topics.includes(topic.id);
           });
           setSelectedTopics(topicsMap);
         }
@@ -254,6 +276,65 @@ export default function PerfilScreen() {
       [topicId]: value
     }));
     // TODO: Aquí se podría hacer una llamada a un endpoint para actualizar los topics
+  };
+
+  const handleCreateFamilyGroup = async () => {
+    if (!familyGroupName.trim() || creatingFamily || !accessToken) return;
+
+    setCreatingFamily(true);
+    try {
+      const newFamilyGroup = await familyGroupService.createFamilyGroup(
+        accessToken,
+        familyGroupName.trim()
+      );
+      
+      setFamilyGroup(newFamilyGroup);
+      setFamilyGroupName('');
+      setShowCreateFamilyModal(false);
+    } catch (error) {
+      console.error('Error al crear grupo familiar:', error);
+      alert('Error al crear el grupo familiar. Intenta nuevamente.');
+    } finally {
+      setCreatingFamily(false);
+    }
+  };
+
+  const handleInviteMember = async () => {
+    if (!inviteEmail.trim() || sendingInvite || !accessToken) return;
+
+    setSendingInvite(true);
+    try {
+      const response = await familyGroupService.sendInvitation(accessToken, inviteEmail.trim());
+      console.log('Invitación enviada:', response);
+      setInviteEmail('');
+      alert('Invitación enviada exitosamente');
+    } catch (error) {
+      console.error('Error al invitar miembro:', error);
+      alert('Error al enviar la invitación. Verifica que el correo sea válido.');
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!accessToken) return;
+    
+    try {
+      await familyGroupService.removeMember(accessToken, memberId);
+      
+      // Actualizar estado local
+      if (familyGroup) {
+        const updatedMembers = familyGroup.members.filter(m => m.id !== memberId);
+        setFamilyGroup({
+          ...familyGroup,
+          members: updatedMembers,
+        });
+      }
+      alert('Miembro eliminado exitosamente');
+    } catch (error) {
+      console.error('Error al eliminar miembro:', error);
+      alert('Error al eliminar miembro. Intenta nuevamente.');
+    }
   };
 
   if (loading) {
@@ -481,12 +562,199 @@ export default function PerfilScreen() {
           </View>
         </View>
 
+        {/* Grupo Familiar */}
+        <View style={styles.section}>
+          <View style={styles.familyHeader}>
+            <Ionicons name="people-outline" size={20} color="#6B7280" />
+            <Text style={styles.sectionTitle}>Grupo Familiar</Text>
+          </View>
+          
+          {familyGroup ? (
+            <View>
+              <View style={styles.familyGroupCard}>
+                <View>
+                  <Text style={styles.familyGroupName}>{familyGroup.name}</Text>
+                  <Text style={styles.familyGroupMembers}>{familyGroup.members.length} miembro{familyGroup.members.length !== 1 ? 's' : ''}</Text>
+                </View>
+                <View style={styles.familyAvatarsRow}>
+                  {familyGroup.members.slice(0, 3).map((member, index) => {
+                    const initials = (member.first_name.substring(0, 1) + (member.last_name?.substring(0, 1) || '')).toUpperCase();
+                    return (
+                      <View key={member.id} style={[styles.familyAvatar, index > 0 && styles.familyAvatarOverlap]}>
+                        <Text style={styles.familyAvatarText}>{initials}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={styles.administrarBtn}
+                onPress={() => setShowManageFamilyModal(true)}
+              >
+                <Text style={styles.administrarBtnText}>Administrar</Text>
+                <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.sectionDescription}>
+                Crea un grupo familiar para gestionar gastos compartidos.
+              </Text>
+              <TouchableOpacity 
+                style={styles.createFamilyBtn}
+                onPress={() => setShowCreateFamilyModal(true)}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={APP_THEME.button.primary.background} />
+                <Text style={styles.createFamilyBtnText}>Crear grupo familiar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={APP_THEME.status.error} />
           <Text style={styles.logoutBtnText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal para crear grupo familiar */}
+      <Modal 
+        visible={showCreateFamilyModal} 
+        transparent 
+        animationType="fade"
+        onRequestClose={() => setShowCreateFamilyModal(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowCreateFamilyModal(false)}
+        >
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Crear Grupo Familiar</Text>
+              <TouchableOpacity onPress={() => setShowCreateFamilyModal(false)}>
+                <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.modalLabel}>Nombre del grupo</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Ej: Casa González"
+                placeholderTextColor={APP_THEME.text.secondary}
+                value={familyGroupName}
+                onChangeText={setFamilyGroupName}
+                editable={!creatingFamily}
+              />
+              <Text style={styles.modalHint}>Este nombre identificará a tu grupo familiar</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.modalCancelBtn}
+                onPress={() => setShowCreateFamilyModal(false)}
+                disabled={creatingFamily}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalCreateBtn, (!familyGroupName.trim() || creatingFamily) && styles.modalCreateBtnDisabled]}
+                onPress={handleCreateFamilyGroup}
+                disabled={!familyGroupName.trim() || creatingFamily}
+              >
+                <Text style={styles.modalCreateBtnText}>{creatingFamily ? 'Creando...' : 'Crear'}</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal para administrar grupo familiar */}
+      <Modal 
+        visible={showManageFamilyModal} 
+        transparent 
+        animationType="fade"
+        onRequestClose={() => setShowManageFamilyModal(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowManageFamilyModal(false)}
+        >
+          <Pressable style={styles.manageFamilyModalContent} onPress={() => {}}>
+            <View style={styles.manageFamilyHeader}>
+              <Text style={styles.manageFamilyTitle}>{familyGroup?.name}</Text>
+              <TouchableOpacity onPress={() => setShowManageFamilyModal(false)}>
+                <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.manageFamilyBody} showsVerticalScrollIndicator={false}>
+              {/* Miembros */}
+              <View style={styles.manageFamilySection}>
+                <Text style={styles.manageFamilySectionTitle}>Miembros</Text>
+                {familyGroup?.members.map((member, index) => {
+                  const initials = (member.first_name.substring(0, 1) + (member.last_name?.substring(0, 1) || '')).toUpperCase();
+                  const isAdmin = index === 0;
+                  const contribution = isAdmin ? '60%' : '40%';
+                  
+                  return (
+                    <View key={member.id} style={styles.memberRow}>
+                      <View style={styles.memberAvatar}>
+                        <Text style={styles.memberAvatarText}>{initials}</Text>
+                      </View>
+                      <View style={styles.memberInfo}>
+                        <View style={styles.memberNameRow}>
+                          <Text style={styles.memberName}>{member.first_name} {member.last_name}</Text>
+                          {isAdmin && <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Admin</Text></View>}
+                        </View>
+                        <Text style={styles.memberContribution}>~ {contribution} contribución</Text>
+                      </View>
+                      {!isAdmin && (
+                        <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
+                          <Ionicons name="trash-outline" size={20} color={APP_THEME.status.error} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Invitar por correo */}
+              <View style={styles.manageFamilySection}>
+                <Text style={styles.manageFamilySectionTitle}>Invitar por correo</Text>
+                <View style={styles.inviteContainer}>
+                  <TextInput
+                    style={styles.inviteInput}
+                    placeholder="correo@ejemplo.com"
+                    placeholderTextColor={APP_THEME.text.secondary}
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!sendingInvite}
+                  />
+                  <TouchableOpacity 
+                    style={styles.inviteSendBtn}
+                    onPress={handleInviteMember}
+                    disabled={!inviteEmail.trim() || sendingInvite}
+                  >
+                    <Ionicons name="checkmark" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.inviteHint}>El usuario recibirá una notificación para unirse al grupo.</Text>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity 
+              style={styles.doneBtn}
+              onPress={() => setShowManageFamilyModal(false)}
+            >
+              <Text style={styles.doneBtnText}>Listo</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -773,5 +1041,301 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: APP_THEME.text.primary,
+  },
+  familyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  familyGroupCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  familyGroupName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: APP_THEME.text.primary,
+    marginBottom: 4,
+  },
+  familyGroupMembers: {
+    fontSize: 12,
+    color: APP_THEME.text.secondary,
+  },
+  familyAvatarsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  familyAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: APP_THEME.button.primary.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: APP_THEME.card.background,
+  },
+  familyAvatarOverlap: {
+    marginLeft: -12,
+  },
+  familyAvatarText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: APP_THEME.button.primary.text,
+  },
+  administrarBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+    borderRadius: 10,
+    backgroundColor: APP_THEME.card.progressBg,
+  },
+  administrarBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.text.primary,
+  },
+  createFamilyBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: APP_THEME.button.primary.background,
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+    gap: 8,
+  },
+  createFamilyBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.button.primary.background,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: APP_THEME.background.primary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 32,
+    borderTopWidth: 1,
+    borderColor: APP_THEME.card.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: APP_THEME.text.primary,
+  },
+  modalBody: {
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontSize: 12,
+    color: APP_THEME.text.secondary,
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: APP_THEME.text.primary,
+    backgroundColor: APP_THEME.card.progressBg,
+    marginBottom: 8,
+  },
+  modalHint: {
+    fontSize: 11,
+    color: APP_THEME.text.secondary,
+    fontStyle: 'italic',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+    backgroundColor: APP_THEME.card.progressBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.text.primary,
+  },
+  modalCreateBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: APP_THEME.button.primary.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCreateBtnDisabled: {
+    opacity: 0.6,
+  },
+  modalCreateBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.button.primary.text,
+  },
+  manageFamilyModalContent: {
+    backgroundColor: APP_THEME.background.primary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderColor: APP_THEME.card.border,
+    maxHeight: '90%',
+  },
+  manageFamilyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  manageFamilyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: APP_THEME.text.primary,
+  },
+  manageFamilyBody: {
+    marginBottom: 16,
+    maxHeight: '70%',
+  },
+  manageFamilySection: {
+    marginBottom: 24,
+  },
+  manageFamilySectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.text.primary,
+    marginBottom: 12,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: APP_THEME.card.border,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: APP_THEME.button.primary.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  memberAvatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: APP_THEME.button.primary.text,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  memberName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: APP_THEME.text.primary,
+  },
+  adminBadge: {
+    backgroundColor: APP_THEME.button.primary.background,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  adminBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: APP_THEME.button.primary.text,
+  },
+  memberContribution: {
+    fontSize: 12,
+    color: APP_THEME.text.secondary,
+  },
+  inviteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  inviteInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: APP_THEME.card.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: APP_THEME.text.primary,
+    backgroundColor: APP_THEME.card.progressBg,
+  },
+  inviteSendBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: APP_THEME.button.primary.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inviteHint: {
+    fontSize: 11,
+    color: APP_THEME.text.secondary,
+    fontStyle: 'italic',
+  },
+  doneBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: APP_THEME.button.primary.background,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  doneBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: APP_THEME.button.primary.text,
   },
 });

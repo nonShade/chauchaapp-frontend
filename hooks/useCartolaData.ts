@@ -56,6 +56,10 @@ function normalizeToOfficialCategory(tx: any, categoryMap: Record<string, string
 function buildDistributionFromTransactions(txList: any[], totalExpense: number, catLookup: Record<string, string>, typeLookup: Record<string, 'INCOME' | 'EXPENSE'>): DistributionData[] {
   const categorySummaryMap: Record<string, { name: string; amount: number }> = {};
 
+  if (!Array.isArray(txList)) {
+    return [];
+  }
+
   txList.forEach((tx: any) => {
     try {
       const { normalizeTransaction } = require('../services/api/adapters');
@@ -157,13 +161,17 @@ export function useCartolaData(isGroup: boolean = false, skipFetch: boolean = fa
         ? transactionsData
         : (transactionsData as any)?.data || [];
 
+      if (!Array.isArray(txList)) {
+        throw new Error('Transactions data format is invalid');
+      }
+
       let balanceAcc = 0;
       let incomeAcc = 0;
       let expenseAcc = 0;
 
       const { normalizeTransaction } = require('../services/api/adapters');
 
-      const normalizedTransactions = txList.map((tx: any) => {
+      const normalizedTransactions = (txList as any[]).map((tx: any) => {
         const normalized = normalizeTransaction(tx, typeLookup);
 
         normalized.category = normalizeToOfficialCategory(tx, catLookup);

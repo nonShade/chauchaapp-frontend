@@ -12,10 +12,42 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
+import { PiggyBank } from 'lucide-react-native';
 import { APP_THEME } from '@/constants/themes';
 import NewsCard from '@/components/home/NewsCard';
 import { NewsSkeleton } from '@/components/home/NewsSkeleton';
 import { newsService, Topic, NewsAnalysis } from '@/services/api/news';
+
+const NEWS_TAG_COLORS = {
+  bg: '#1a2a3a',
+  text: '#55aaff',
+};
+
+function getUrgencyColor(urgency?: string) {
+  switch (urgency) {
+    case 'alto':
+      return '#ff6666';
+    case 'medio':
+      return '#ffaa44';
+    case 'bajo':
+      return '#66ff66';
+    default:
+      return APP_THEME.text.secondary;
+  }
+}
+
+function getUrgencyLabel(urgency?: string) {
+  switch (urgency) {
+    case 'alto':
+      return 'Alto impacto';
+    case 'medio':
+      return 'Medio impacto';
+    case 'bajo':
+      return 'Bajo impacto';
+    default:
+      return 'Impacto';
+  }
+}
 
 export default function NoticiasScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
@@ -157,7 +189,7 @@ export default function NoticiasScreen() {
             <Pressable style={styles.modalCard} onPress={() => {}}>
             <View style={styles.modalHeader}>
               <View style={styles.impactBadgeContainer}>
-                <Text
+                <View
                   style={[
                     styles.impactBadge,
                     modalNews?.nivel_urgencia === 'alto' && styles.impactAlto,
@@ -166,8 +198,20 @@ export default function NoticiasScreen() {
                     modalNews?.nivel_urgencia === 'bajo' && styles.impactBajo,
                   ]}
                 >
-                  {modalNews?.nivel_urgencia?.toUpperCase()}
-                </Text>
+                  <PiggyBank
+                    size={16}
+                    color={getUrgencyColor(modalNews?.nivel_urgencia)}
+                    strokeWidth={2.2}
+                  />
+                  <Text
+                    style={[
+                      styles.impactBadgeText,
+                      { color: getUrgencyColor(modalNews?.nivel_urgencia) },
+                    ]}
+                  >
+                    {getUrgencyLabel(modalNews?.nivel_urgencia)}
+                  </Text>
+                </View>
               </View>
               <Pressable
                 onPress={() => setModalNews(null)}
@@ -200,8 +244,21 @@ export default function NoticiasScreen() {
 
               <View style={styles.tagsContainer}>
                 {modalNews?.etiquetas?.map((tag, idx) => (
-                  <View key={idx} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
+                  <View
+                    key={idx}
+                    style={[
+                      styles.tag,
+                      { backgroundColor: NEWS_TAG_COLORS.bg },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.tagText,
+                        { color: NEWS_TAG_COLORS.text },
+                      ]}
+                    >
+                      {tag}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -369,12 +426,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   impactBadge: {
+    flexDirection: 'row',
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 999,
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  impactBadgeText: {
     fontWeight: '700',
     fontSize: 12,
-    alignSelf: 'flex-start',
   },
   impactAlto: {
     backgroundColor: '#4a2222',
@@ -421,13 +484,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tag: {
-    backgroundColor: APP_THEME.cards.news.background,
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
   },
   tagText: {
-    color: APP_THEME.cards.news.accent,
     fontWeight: '600',
     fontSize: 12,
   },

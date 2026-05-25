@@ -1,63 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { PiggyBank } from "lucide-react-native";
 import { APP_THEME } from "@/constants/themes";
 
-// Color palette para categorías
-const COLOR_PALETTE = [
-  { bg: "#1a3a1a", text: "#66ff66" }, // Verde
-  { bg: "#3a3a1a", text: "#ffcc44" }, // Amarillo
-  { bg: "#2a1a3a", text: "#ff66ff" }, // Morado
-  { bg: "#3a2a1a", text: "#ffaa55" }, // Naranja
-  { bg: "#1a2a3a", text: "#55aaff" }, // Azul
-  { bg: "#3a1a1a", text: "#ff5555" }, // Rojo
-  { bg: "#2a3a1a", text: "#88ff66" }, // Verde claro
-  { bg: "#1a3a2a", text: "#55ffaa" }, // Turquesa
-  { bg: "#2a1a2a", text: "#ff88ff" }, // Rosa
-  { bg: "#3a3a1a", text: "#ffff55" }, // Amarillo claro
-];
-
-const CATEGORY_ICONS: Record<string, string> = {
-  "Salario Base": "wallet",
-  Commodities: "trending-up",
-  Impuestos: "receipt",
-  PYME: "briefcase",
-  Logistica: "car",
-  Monetaria: "logo-usd",
-  Economia: "stats-chart",
+const CATEGORY_COLOR = {
+  bg: "#1a2a3a",
+  text: "#55aaff",
 };
-
-// Hash function para generar índice consistente
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash) % COLOR_PALETTE.length;
-}
-
-function getCategoryColor(category: string) {
-  const index = hashString(category);
-  return COLOR_PALETTE[index];
-}
-
-function getCategoryIcon(category: string) {
-  return CATEGORY_ICONS[category] || "tag";
-}
-
-function getUrgencyIcon(urgency: string) {
-  switch (urgency) {
-    case "alto":
-      return "alert-circle";
-    case "medio":
-      return "alert";
-    case "bajo":
-      return "checkmark-circle";
-    default:
-      return "help-circle";
-  }
-}
 
 function getUrgencyColor(urgency: string) {
   switch (urgency) {
@@ -69,6 +18,32 @@ function getUrgencyColor(urgency: string) {
       return "#66ff66";
     default:
       return "#aaaaaa";
+  }
+}
+
+function getUrgencyBackground(urgency: string) {
+  switch (urgency) {
+    case "alto":
+      return "#3a1a1a";
+    case "medio":
+      return "#3a2a1a";
+    case "bajo":
+      return "#1a3a1a";
+    default:
+      return "#242424";
+  }
+}
+
+function getUrgencyLabel(urgency: string) {
+  switch (urgency) {
+    case "alto":
+      return "Alto impacto";
+    case "medio":
+      return "Medio impacto";
+    case "bajo":
+      return "Bajo impacto";
+    default:
+      return "Impacto";
   }
 }
 
@@ -118,19 +93,14 @@ export default function NewsCard({
             style={[
               styles.impactBadge,
               {
-                backgroundColor:
-                  data.nivel_urgencia === "alto"
-                    ? "#3a1a1a"
-                    : data.nivel_urgencia === "medio"
-                    ? "#3a2a1a"
-                    : "#1a3a1a",
+                backgroundColor: getUrgencyBackground(data.nivel_urgencia),
               },
             ]}
           >
-            <Ionicons
-              name={getUrgencyIcon(data.nivel_urgencia)}
+            <PiggyBank
               size={14}
               color={getUrgencyColor(data.nivel_urgencia)}
+              strokeWidth={2.2}
             />
             <Text
               style={[
@@ -138,11 +108,7 @@ export default function NewsCard({
                 { color: getUrgencyColor(data.nivel_urgencia) },
               ]}
             >
-              {data.nivel_urgencia === "alto"
-                ? "Impacto alto"
-                : data.nivel_urgencia === "medio"
-                ? "Impacto medio"
-                : "Impacto bajo"}
+              {getUrgencyLabel(data.nivel_urgencia)}
             </Text>
           </View>
         )}
@@ -165,25 +131,24 @@ export default function NewsCard({
           {data.summary}
         </Text>
 
-        {/* Categorías/Etiquetas con colores dinámicos */}
+        {/* Categorías/Etiquetas con color unificado */}
         {data.etiquetas && data.etiquetas.length > 0 && (
           <View style={styles.tagsContainer}>
             {data.etiquetas.slice(0, 3).map((tag, idx) => {
-              const color = getCategoryColor(tag);
               return (
                 <View
                   key={idx}
                   style={[
                     styles.categoryTag,
-                    { backgroundColor: color.bg },
+                    { backgroundColor: CATEGORY_COLOR.bg },
                   ]}
                 >
-                  <Ionicons
-                    name={getCategoryIcon(tag)}
-                    size={12}
-                    color={color.text}
-                  />
-                  <Text style={[styles.categoryTagText, { color: color.text }]}>
+                  <Text
+                    style={[
+                      styles.categoryTagText,
+                      { color: CATEGORY_COLOR.text },
+                    ]}
+                  >
                     {tag}
                   </Text>
                 </View>
@@ -234,8 +199,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 999,
+    justifyContent: "center",
   },
   impactBadgeText: {
     fontSize: 12,
