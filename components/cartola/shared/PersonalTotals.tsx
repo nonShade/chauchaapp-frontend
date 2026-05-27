@@ -5,6 +5,7 @@ import { SummaryResponse } from '@/types/transaction';
 
 interface PersonalTotalsProps {
   summary: SummaryResponse | null;
+  isGroup?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -15,7 +16,7 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export default function PersonalTotals({ summary }: PersonalTotalsProps) {
+export default function PersonalTotals({ summary, isGroup }: PersonalTotalsProps) {
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
   const balance = summary?.total_balance || 0;
@@ -23,8 +24,8 @@ export default function PersonalTotals({ summary }: PersonalTotalsProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="person-outline" size={16} color={APP_THEME.cards.balance.tagText} />
-        <Text style={styles.title}>Totales Personales</Text>
+        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={16} color={APP_THEME.cards.balance.tagText} />
+        <Text style={styles.title}>{isGroup ? 'Totales Grupales' : 'Totales Personales'}</Text>
       </View>
       <View style={styles.row}>
         <View style={styles.column}>

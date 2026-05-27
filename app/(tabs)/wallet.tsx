@@ -107,7 +107,7 @@ export default function CartolaScreen() {
               <View style={[styles.personalModeTag, { backgroundColor: APP_THEME.group.modeTagBg }]}>
                 <Ionicons name="people-outline" size={12} color={APP_THEME.group.modeTagText} />
                 <Text style={[styles.personalModeText, { color: APP_THEME.group.modeTagText }]}>
-                  {hasGroup && group ? `Modo ${group.name}` : 'Modo Grupo Familiar'}
+                  Modo Grupo Familiar
                 </Text>
               </View>
             )}
@@ -162,7 +162,7 @@ export default function CartolaScreen() {
               styles.toggleText,
               { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
             ]}>
-              {hasGroup && group ? group.name : 'Grupo Familiar'}
+              Grupo Familiar
             </Text>
           </TouchableOpacity>
         </View>
@@ -288,8 +288,8 @@ export default function CartolaScreen() {
                 onDelete={handleDelete}
                 isGroup={true}
               />
-              <PersonalTotals summary={historicalSummary} />
-              <CategoryExpenses distribution={distribution} />
+              <PersonalTotals summary={historicalSummary} isGroup={true} />
+              <CategoryExpenses distribution={distribution} isGroup={true} />
               <RecentTransactions
                 transactions={transactions}
                 onRefresh={refetch}
