@@ -157,10 +157,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 />
                               ) : (
                                   <>
-                                    <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Ingreso')}</Text>
-                                    {isGroup && (item as any).user_name ? (
-                                      <Text style={styles.detailItemDescription}>Por: {(item as any).user_name}</Text>
-                                    ) : null}
+                                    <Text style={styles.detailItemName}>{isGroup ? 'Ingreso' : (item.description ? (item.category || 'Otros') : (item.category || 'Ingreso'))}</Text>
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
@@ -244,9 +241,6 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                               ) : (
                                   <>
                                     <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Gasto')}</Text>
-                                    {isGroup && (item as any).user_name ? (
-                                      <Text style={styles.detailItemDescription}>Por: {(item as any).user_name}</Text>
-                                    ) : null}
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
