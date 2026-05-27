@@ -1,11 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { APP_THEME } from "@/constants/themes";
+import NotificationsPanel from "@/components/home/NotificationsPanel";
 
 export default function Header({ userName = "Usuario" }) {
   const router = useRouter();
-  const initials = userName.substring(0, 1).toUpperCase();
+  const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -15,32 +17,46 @@ export default function Header({ userName = "Usuario" }) {
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.profileSection}
-        onPress={() => router.push("profile")}
-      >
-        <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
-          <Image 
-            source={require("@/assets/images/logo-chauchapp.png")} 
-            style={{ width: 36, height: 36, borderRadius: 8 }}
-            resizeMode="contain"
-          />
-        </View>
-        <View style={styles.textBlock}>
-          <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>{getGreeting()}</Text>
-          <Text style={[styles.userName, { color: APP_THEME.text.primary }]}>{userName}</Text>
-        </View>
-      </TouchableOpacity>
+    <>
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={styles.profileSection}
+          onPress={() => router.push("profile")}
+        >
+          <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+            <Image
+              source={require("@/assets/images/logo-chauchapp.png")}
+              style={{ width: 36, height: 36, borderRadius: 8 }}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.textBlock}>
+            <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>
+              {getGreeting()}
+            </Text>
+            <Text style={[styles.userName, { color: APP_THEME.text.primary }]}>
+              {userName}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.notificationBtn}>
-        <Ionicons
-          name="notifications-outline"
-          size={24}
-          color={APP_THEME.text.primary}
-        />
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={styles.notificationBtn}
+          onPress={() => setNotificationsVisible(true)}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color={APP_THEME.text.primary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <NotificationsPanel
+        visible={notificationsVisible}
+        onClose={() => setNotificationsVisible(false)}
+      />
+    </>
   );
 }
 
