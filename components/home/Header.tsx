@@ -18,12 +18,12 @@ export default function Header({ userName = "Usuario" }) {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.profileSection}
-        onPress={() => router.push("profile")}
+        onPress={() => router.push("/profile")}
       >
-        <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+        <View style={styles.avatar}>
           <Image 
-            source={require("@/assets/images/logo-chauchapp.png")} 
-            style={{ width: 36, height: 36, borderRadius: 8 }}
+            source={require("@/assets/images/ChauchaApp.png")} 
+            style={{ width: 48, height: 48 }}
             resizeMode="contain"
           />
         </View>
@@ -60,9 +60,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,

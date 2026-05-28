@@ -280,7 +280,7 @@ export default function CartolaScreen() {
             <GroupEmptyState />
           ) : (
             <View style={styles.groupContentContainer}>
-              <PersonalSummaryChart data={incomeVsExpenses} />
+              <PersonalSummaryChart data={incomeVsExpenses} isGroup={true} />
               <MonthAccordion
                 transactions={transactionsList}
                 summary={summary}
