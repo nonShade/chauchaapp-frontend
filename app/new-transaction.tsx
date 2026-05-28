@@ -17,7 +17,10 @@ import {
 } from '@/services/api/transactions';
 import { LocalTransactionType, LocalFrequency } from '@/types/transaction';
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const formatDateDisplay = (iso: string) => {
   const [y, m, d] = iso.split('-');
@@ -197,7 +200,10 @@ export default function NewTransactionScreen() {
       } else {
         await createTransaction(payload);
       }
-      router.back();
+      router.navigate({
+        pathname: '/(tabs)/wallet',
+        params: { tab: isGroupMode ? 'group' : 'individual' }
+      });
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
       if (Array.isArray(detail)) {

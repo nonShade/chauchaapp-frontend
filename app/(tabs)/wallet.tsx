@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
 import PersonalSummaryChart from '@/components/cartola/shared/PersonalSummaryChart';
 import MonthAccordion from '@/components/cartola/shared/MonthAccordion';
@@ -22,6 +22,7 @@ const formatCurrency = (value: number) => {
 };
 
 export default function CartolaScreen() {
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
   const { group, isLoading: isGroupLoading, hasGroup, refetch: refetchGroup } = useGroupData();
   const skipGroupFetch = activeTab === 'group' && !isGroupLoading && !hasGroup;
@@ -33,9 +34,13 @@ export default function CartolaScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (tab === 'group' || tab === 'individual') {
+        setActiveTab(tab);
+        router.setParams({ tab: '' });
+      }
       refetchGroup();
       refetch();
-    }, [refetch, refetchGroup])
+    }, [tab, refetch, refetchGroup])
   );
 
   const handleDelete = useCallback((transactionId: string) => {
