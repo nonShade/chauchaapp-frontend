@@ -22,10 +22,10 @@ export default function PersonalTotals({ summary, isGroup }: PersonalTotalsProps
   const balance = summary?.total_balance || 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isGroup && { borderColor: APP_THEME.group.primary }]}>
       <View style={styles.header}>
-        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={16} color={APP_THEME.cards.balance.tagText} />
-        <Text style={styles.title}>{isGroup ? 'Totales Grupales' : 'Totales Personales'}</Text>
+        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={16} color={isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText} />
+        <Text style={[styles.title, isGroup && { color: APP_THEME.group.primary }]}>{isGroup ? 'Totales Grupales' : 'Totales Personales'}</Text>
       </View>
       <View style={styles.row}>
         <View style={styles.column}>

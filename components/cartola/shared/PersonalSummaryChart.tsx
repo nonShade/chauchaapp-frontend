@@ -61,7 +61,7 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="bar-chart-outline" size={18} color={APP_THEME.cards.balance.tagText} />
+        <Ionicons name="bar-chart-outline" size={18} color={isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText} />
         <Text style={styles.title}>{isGroup ? 'Resumen Grupal' : 'Resumen Personal'}</Text>
       </View>
 

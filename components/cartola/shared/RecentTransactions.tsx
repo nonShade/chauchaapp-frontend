@@ -69,7 +69,7 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={18} color={APP_THEME.cards.balance.tagText} />
+        <Ionicons name={isGroup ? "people-outline" : "person-outline"} size={18} color={isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText} />
         <Text style={styles.title}>{isGroup ? "Últimos movimientos del grupo" : "Últimos movimientos personales"}</Text>
       </View>
 

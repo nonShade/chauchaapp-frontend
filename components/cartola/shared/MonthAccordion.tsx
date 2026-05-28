@@ -89,7 +89,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
           </View>
         ) : (
           groupedMonths.map((month) => (
-            <View key={month.id} style={styles.accordionContainer}>
+            <View key={month.id} style={[styles.accordionContainer, isGroup && { borderColor: APP_THEME.group.primary }]}>
               <TouchableOpacity
                 style={styles.accordionHeader}
                 onPress={() => setExpandedId(expandedId === month.id ? null : month.id)}
@@ -98,9 +98,9 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                   <Ionicons
                     name={expandedId === month.id ? "chevron-up" : "chevron-down"}
                     size={16}
-                    color={APP_THEME.cards.balance.tagText}
+                    color={isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText}
                   />
-                  <Ionicons name="calendar-outline" size={16} color={APP_THEME.cards.balance.tagText} />
+                  <Ionicons name="calendar-outline" size={16} color={isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText} />
                   <Text style={styles.monthName}>{month.name}</Text>
                 </View>
                 <Text style={[
