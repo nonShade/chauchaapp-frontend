@@ -121,11 +121,11 @@ export default function LoginScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
-            source={require("@/assets/images/logo-chauchapp.png")}
+            source={require("@/assets/images/ChauchaApp.png")}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={[styles.appName, { color: LOGIN_COLORS.textPrimary }]}>
+          <Text style={[styles.appName, { color: APP_THEME.button.primary.background }]}>
             ChauchApp
           </Text>
           <Text
@@ -327,12 +327,8 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: LOGIN_COLORS.inputBorder,
+    width: 100,
+    height: 100,
     marginBottom: 16,
   },
   appName: {
