@@ -163,11 +163,15 @@ export default function CartolaScreen() {
               size={18}
               color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText}
             />
-            <Text style={[
-              styles.toggleText,
-              { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
-            ]}>
-              Grupo Familiar
+            <Text 
+              style={[
+                styles.toggleText,
+                { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group?.name || 'Grupo Familiar'}
             </Text>
           </TouchableOpacity>
         </View>
