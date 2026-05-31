@@ -164,14 +164,8 @@ export default function NoticiasScreen() {
       )}
 
       {/* Loading State with Skeleton */}
-      {loading ? (
+      {loading || filtered.length === 0 ? (
         <View style={styles.skeletonContainer}>{renderSkeleton()}</View>
-      ) : filtered.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            No hay noticias en esta categoría
-          </Text>
-        </View>
       ) : (
         <FlatList
           data={filtered}
@@ -381,16 +375,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: APP_THEME.text.secondary,
-    fontSize: 16,
-  },
-
   // Skeleton Loading
   skeletonContainer: {
     padding: 16,

@@ -21,6 +21,7 @@ import React from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { APP_THEME } from "@/constants/themes";
+import { runBackgroundRequest } from "../services/api/backgroundRequest";
  
 import { FormData, FormErrors } from "@/types/registerForm";
 import ProgressBar from "@/components/register/ProgressBar";
@@ -314,6 +315,13 @@ export default function RegisterScreen() {
       }
       if (data.user) {
         await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      }
+
+      if (data.access_token) {
+        void runBackgroundRequest("/tips/generate", {
+          token: data.access_token,
+          baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+        });
       }
  
       router.replace("/(tabs)");
