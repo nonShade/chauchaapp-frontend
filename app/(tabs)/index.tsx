@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import NewsCard from "@/components/home/NewsCard";
 import TipCard from "@/components/home/TipCard";
 import { useCartolaData } from "@/hooks/useCartolaData";
+import { tipsService, DailyTip } from "@/services/api/tips";
 
 const formatCLP = (amount: number) => {
   return new Intl.NumberFormat('es-CL', {
@@ -30,6 +31,8 @@ export default function HomeScreen() {
   const [balance, setBalance] = useState(0);
   const [ingresos, setIngresos] = useState(0);
   const [gastos, setGastos] = useState(0);
+  const [dailyTip, setDailyTip] = useState<DailyTip | null>(null);
+  const [tipLoading, setTipLoading] = useState(true);
 
   const news = {
     title: "El cobre experimenta una leve alza",
@@ -47,6 +50,26 @@ export default function HomeScreen() {
       setGastos(summary.total_expenses || 0);
     }
   }, [isLoading, summary, calculatedBalance]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTodayTip = async () => {
+      setTipLoading(true);
+      const tip = await tipsService.getTodayTip();
+
+      if (mounted) {
+        setDailyTip(tip);
+        setTipLoading(false);
+      }
+    };
+
+    loadTodayTip();
+
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken]);
 
   return (
     <SafeAreaView
@@ -199,7 +222,11 @@ export default function HomeScreen() {
           data={news}
           onVerMas={() => router.push("/(tabs)/news" as any)}
         />
-        <TipCard tip="Destina el 20% de tus ingresos al ahorro. Crea un fondo de emergencia de 3-6 meses de gastos para mayor seguridad financiera." />
+        <TipCard
+          loading={tipLoading}
+          title={dailyTip?.title}
+          text={dailyTip?.text}
+        />
       </ScrollView>
     </SafeAreaView>
   );
