@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { APP_THEME } from "@/constants/themes";
 
 export default function Header({ userName = "Usuario" }) {
   const router = useRouter();
-  const initials = userName.substring(0, 1).toUpperCase();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -33,14 +33,18 @@ export default function Header({ userName = "Usuario" }) {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.notificationBtn}>
-        <Ionicons
-          name="notifications-outline"
-          size={24}
-          color={APP_THEME.text.primary}
-        />
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={styles.notificationBtn}
+          onPress={() => router.push("/notifications")}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={24}
+            color={APP_THEME.text.primary}
+          />
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }
 
