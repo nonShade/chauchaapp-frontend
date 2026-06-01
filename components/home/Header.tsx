@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { APP_THEME } from "@/constants/themes";
+import { useNotifications } from "@/hooks/useNotification";
+
 
 export default function Header({ userName = "Usuario" }) {
   const router = useRouter();
@@ -13,6 +15,15 @@ export default function Header({ userName = "Usuario" }) {
     if (hour >= 12 && hour < 19) return "Buenas tardes";
     return "Buenas noches";
   };
+  const { notifications, loadNotifications } = useNotifications();
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const newNotificationsCount = notifications.filter(
+    n => !n.seen_at
+  ).length;
 
   return (
     <View style={styles.container}>
@@ -34,9 +45,10 @@ export default function Header({ userName = "Usuario" }) {
       </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.notificationBtn}
+          style={[styles.notificationBtn, { display: "flex", flexDirection: "row", alignItems: "center"}]}
           onPress={() => router.push("/notifications")}
         >
+          <Text style={[{ color: APP_THEME.text.primary, backgroundColor: newNotificationsCount > 0 ? APP_THEME.button.primary.background : "#8b8f95", borderRadius: 10, width: 20, height: 20, textAlign: "center", alignSelf: "center" }]}>{newNotificationsCount}</Text>
           <Ionicons
             name="notifications-outline"
             size={24}

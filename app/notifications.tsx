@@ -69,63 +69,6 @@ const C = {
   newBadgeText:   "#20a353",
 } as const;
 
-// ─── DEBUG: Notificaciones de prueba ─────────────────────────────────────────
-// TODO: eliminar cuando el backend genere notificaciones reales.
-const now = Date.now();
-const DEBUG_NOTIFICATIONS: Notification[] = [
-  // ── Invitaciones ──
-  {
-    notification_id: "debug-1", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.GROUP_JOIN_REQUEST,
-    notification_status: "pending",
-    message: "[DEBUG] María López te ha invitado a unirte al grupo familiar López 2024.",
-    scheduled_date: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "inv-debug-001", reference_type: "invitation", seen_at: null,
-  },
-  // ── Próximos gastos (recordatorios) ──
-  {
-    notification_id: "debug-7", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.TRANSACTION_REMINDER,
-    notification_status: "read",
-    message: "[DEBUG] En 3 días vence tu gasto \"Dividendo Departamento\" por $420.000 (23 de abril). Revisa tu saldo.",
-    scheduled_date: new Date(now - 41 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "tx-debug-007", reference_type: "transaction", seen_at: new Date().toISOString(),
-  },
-  {
-    notification_id: "debug-8", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.TRANSACTION_REMINDER,
-    notification_status: "unread",
-    message: "[DEBUG] Esta semana tienes un gasto programado: \"TAG autopista\" por $35.000 el 25 de abril.",
-    scheduled_date: new Date(now - 42 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "tx-debug-008", reference_type: "transaction", seen_at: null,
-  },
-  // ── Otras notificaciones ──
-  {
-    notification_id: "debug-6", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.SYSTEM_INFO,
-    notification_status: "unread",
-    message: "[DEBUG] ChauchaApp se actualizó a la versión 2.1.0. Revisa las novedades en el menú principal.",
-    scheduled_date: new Date(now - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "", reference_type: "system", seen_at: null,
-  },
-  {
-    notification_id: "debug-5", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.EDUCATIONAL,
-    notification_status: "unread",
-    message: "[DEBUG] Nuevo módulo disponible: Inversión para principiantes. ¡Aprende a hacer crecer tu dinero!",
-    scheduled_date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "module-debug-005", reference_type: "educational_module", seen_at: null,
-  },
-  // Solo 1 tip
-  {
-    notification_id: "debug-4", user_id: "debug",
-    notification_type: NOTIFICATION_TYPES.TIP,
-    notification_status: "unread",
-    message: "[DEBUG] Ahorra al menos el 20% de tus ingresos mensuales para crear un fondo de emergencia.",
-    scheduled_date: new Date(now - 0.5 * 24 * 60 * 60 * 1000).toISOString(),
-    reference_id: "", reference_type: "tip", seen_at: null,
-  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function daysAgo(iso: string): string {
@@ -308,6 +251,7 @@ export default function NotificationsScreen() {
     removeNotification,
     acceptInvitation,
     declineInvitation,
+    markAllAsSeen,
   } = useNotifications();
 
   useEffect(() => {
@@ -325,9 +269,15 @@ export default function NotificationsScreen() {
 
   useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
+  useEffect(() => {
+    if (notifications.length > 0) {
+      markAllAsSeen();
+    }
+  }, [notifications, markAllAsSeen]);
+
   // DEBUG: anteponer debug a las del backend
   // TODO: eliminar DEBUG_NOTIFICATIONS cuando el backend esté listo
-  const allNotifications = [...DEBUG_NOTIFICATIONS, ...notifications];
+  const allNotifications = [...notifications];
   const unreadCount      = allNotifications.filter((n) => !n.seen_at).length;
   const sections         = buildSections(allNotifications);
 
