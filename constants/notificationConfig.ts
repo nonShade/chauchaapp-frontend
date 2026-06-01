@@ -27,11 +27,11 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICA
 // Agrupa tipos con la misma lógica de color/icono.
 
 export type NotificationCategory =
-  | "group"       // verdosos
-  | "tip"         // naranjas
-  | "system"      // azules
-  | "reminder"    // color variable por fecha
-  | "unknown";    // fallback
+  | "group"
+  | "tip"
+  | "system"
+  | "reminder"
+  | "unknown";
 
 /**
  * Devuelve la categoría de una notificación dado su tipo.
@@ -57,79 +57,6 @@ export function getCategory(type: NotificationType): NotificationCategory {
     default:
       return "unknown";
   }
-}
-
-// ─── PALETAS BASE ─────────────────────────────────────────────────────────
-
-export interface NotificationPalette {
-  bg: string;
-  border: string;
-  iconColor: string;
-  labelColor: string;
-  /** Solo para group_join_request: fondo oscuro con botones de acción */
-  isDark?: boolean;
-}
-
-// Paletas estáticas por categoría (excepto "reminder" que es dinámica)
-export const CATEGORY_PALETTE: Record<Exclude<NotificationCategory, "reminder">, NotificationPalette> = {
-  group: {
-    bg:         "rgb(4, 16, 17)",
-    border:     "rgb(6, 41, 29)",
-    iconColor:  "rgb(32, 163, 83)",
-    labelColor: "#fff",
-    isDark:     true,
-  },
-  tip: {
-    bg:         "#fff7ed",
-    border:     "#fed7aa",
-    iconColor:  "#c2410c",
-    labelColor: "#9a3412",
-  },
-  system: {
-    bg:         "#eff6ff",
-    border:     "#bfdbfe",
-    iconColor:  "#1d4ed8",
-    labelColor: "#1e40af",
-  },
-  unknown: {
-    bg:         "#f8fafc",
-    border:     "#cbd5e1",
-    iconColor:  "#475569",
-    labelColor: "#334155",
-  },
-};
-
-/**
- * Paleta dinámica para recordatorios según distancia a la fecha programada.
- *  - Rojo   → ya pasó o falta ≤ 1 día
- *  - Amarillo → falta ≤ 7 días
- *  - Teal   → falta > 14 días
- */
-export function getReminderPalette(scheduledDate: string): NotificationPalette {
-  const now      = new Date();
-  const target   = new Date(scheduledDate);
-  const diffDays = (target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (diffDays <= 1) {
-    return { bg: "#fef2f2", border: "#fca5a5", iconColor: "#dc2626", labelColor: "#991b1b" };
-  }
-  if (diffDays <= 7) {
-    return { bg: "#fefce8", border: "#fde047", iconColor: "#ca8a04", labelColor: "#92400e" };
-  }
-  // > 14 días → teal
-  return   { bg: "#f0fdfa", border: "#99f6e4", iconColor: "#0d9488", labelColor: "#0f766e" };
-}
-
-/**
- * Resuelve la paleta correcta para cualquier notificación.
- */
-export function getPalette(type: NotificationType, scheduledDate?: string): NotificationPalette {
-  const category = getCategory(type);
-  if (category === "reminder" && scheduledDate) {
-    return getReminderPalette(scheduledDate);
-  }
-  return CATEGORY_PALETTE[category as Exclude<NotificationCategory, "reminder">]
-    ?? CATEGORY_PALETTE.unknown;
 }
 
 // ─── METADATOS DE VISUALIZACIÓN ───────────────────────────────────────────
