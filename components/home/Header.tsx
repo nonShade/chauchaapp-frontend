@@ -3,11 +3,9 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { APP_THEME } from "@/constants/themes";
-import NotificationsPanel from "@/components/home/NotificationsPanel";
 
 export default function Header({ userName = "Usuario" }) {
   const router = useRouter();
-  const [notificationsVisible, setNotificationsVisible] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -42,7 +40,7 @@ export default function Header({ userName = "Usuario" }) {
 
         <TouchableOpacity
           style={styles.notificationBtn}
-          onPress={() => setNotificationsVisible(true)}
+          onPress={() => router.push("/notifications")}
         >
           <Ionicons
             name="notifications-outline"
@@ -51,11 +49,6 @@ export default function Header({ userName = "Usuario" }) {
           />
         </TouchableOpacity>
       </View>
-
-      <NotificationsPanel
-        visible={notificationsVisible}
-        onClose={() => setNotificationsVisible(false)}
-      />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Notification } from "@/types/notification";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -7,29 +7,63 @@ import {
   acceptGroupInvitation,
   declineGroupInvitation,
 } from "@/services/api/notifications";
+import {
+  useNotificationPermission,
+} from "@/hooks/useNotificationPermission";
+import {
+  getMeta,
+} from "@/constants/notificationConfig";
 
 interface UseNotificationsReturn {
-  notifications: Notification[];
-  loading: boolean;
-  error: string | null;
-  loadNotifications: () => Promise<void>;
-  removeNotification: (notificationId: string) => Promise<void>;
-  acceptInvitation: (invitationId: string, notificationId: string) => Promise<void>;
-  declineInvitation: (invitationId: string, notificationId: string) => Promise<void>;
+  notifications:       Notification[];
+  loading:             boolean;
+  error:               string | null;
+  pushGranted:         boolean;
+  requestPushPermission: () => Promise<boolean>;
+  loadNotifications:   () => Promise<void>;
+  removeNotification:  (notificationId: string) => Promise<void>;
+  acceptInvitation:    (invitationId: string, notificationId: string) => Promise<void>;
+  declineInvitation:   (invitationId: string, notificationId: string) => Promise<void>;
 }
 
 export function useNotifications(): UseNotificationsReturn {
   const { accessToken } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
 
+  // IDs ya notificados en esta sesión para no repetir push
+  const notifiedIds = useRef<Set<string>>(new Set());
+
+  const { granted: pushGranted, requestPermission, sendPush } =
+    useNotificationPermission();
+
+  // ── Disparar push para notificaciones nuevas ─────────────────────────────
+  const pushNewNotifications = useCallback(
+    async (items: Notification[]) => {
+      if (!pushGranted) return;
+
+      const unseen = items.filter(
+        (n) => !n.seen_at && !notifiedIds.current.has(n.notification_id)
+      );
+
+      for (const n of unseen) {
+        const meta = getMeta(n.notification_type);
+        await sendPush({ title: meta.label, body: n.message });
+        notifiedIds.current.add(n.notification_id);
+      }
+    },
+    [pushGranted, sendPush]
+  );
+
+  // ── Cargar notificaciones ────────────────────────────────────────────────
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await fetchNotifications(accessToken);
       setNotifications(data);
+      await pushNewNotifications(data);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al cargar notificaciones"
@@ -37,8 +71,9 @@ export function useNotifications(): UseNotificationsReturn {
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, pushNewNotifications]);
 
+  // ── Eliminar notificación ────────────────────────────────────────────────
   const removeNotification = useCallback(
     async (notificationId: string) => {
       try {
@@ -55,7 +90,7 @@ export function useNotifications(): UseNotificationsReturn {
     [accessToken]
   );
 
-  // Acepta la invitación y luego elimina la notificación del listado
+  // ── Aceptar invitación ───────────────────────────────────────────────────
   const acceptInvitation = useCallback(
     async (invitationId: string, notificationId: string) => {
       try {
@@ -73,7 +108,7 @@ export function useNotifications(): UseNotificationsReturn {
     [accessToken]
   );
 
-  // Rechaza la invitación y luego elimina la notificación del listado
+  // ── Rechazar invitación ──────────────────────────────────────────────────
   const declineInvitation = useCallback(
     async (invitationId: string, notificationId: string) => {
       try {
@@ -95,6 +130,8 @@ export function useNotifications(): UseNotificationsReturn {
     notifications,
     loading,
     error,
+    pushGranted,
+    requestPushPermission: requestPermission,
     loadNotifications,
     removeNotification,
     acceptInvitation,
