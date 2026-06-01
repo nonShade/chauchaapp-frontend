@@ -44,7 +44,6 @@ export default function Header({ userName = "Usuario" }) {
           />
         </TouchableOpacity>
       </View>
-    </>
   );
 }
 
