@@ -318,12 +318,15 @@ export default function RegisterScreen() {
       }
 
       if (data.access_token) {
+        const token = data.access_token;
+
         void runBackgroundRequest("/tips/generate", {
-          token: data.access_token,
-          baseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
+          token,
+          baseUrl: API_BASE_URL,
+          stripApiVersion: true,
         });
       }
- 
+
       router.replace("/(tabs)");
     } catch (err: any) {
       console.error("Login error:", err.message || err);

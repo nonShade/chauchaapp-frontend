@@ -1,28 +1,30 @@
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-const stripApiVersion = (baseUrl: string) => baseUrl.replace(/\/v1\/?$/, '');
-
 type BackgroundRequestOptions = {
   method?: string;
   token?: string;
   body?: unknown;
   headers?: Record<string, string>;
   baseUrl?: string;
+  stripApiVersion?: boolean;
 };
 
 export async function runBackgroundRequest(
   path: string,
   options: BackgroundRequestOptions = {}
 ): Promise<void> {
-  if (!API_BASE_URL) {
+  const baseUrl = options.baseUrl ?? API_BASE_URL;
+
+  if (!baseUrl) {
     console.warn('EXPO_PUBLIC_API_BASE_URL is not configured');
     return;
   }
 
-  const baseUrl = options.baseUrl ?? API_BASE_URL;
-  const resolvedBaseUrl = options.baseUrl ? stripApiVersion(baseUrl) : baseUrl;
-
   try {
+    const resolvedBaseUrl = options.stripApiVersion
+      ? baseUrl.replace(/\/v1\/?$/, '')
+      : baseUrl;
+
     void fetch(`${resolvedBaseUrl}${path}`, {
       method: options.method ?? 'POST',
       headers: {

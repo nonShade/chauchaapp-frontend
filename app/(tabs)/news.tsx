@@ -17,6 +17,10 @@ import { APP_THEME } from '@/constants/themes';
 import NewsCard from '@/components/home/NewsCard';
 import { NewsSkeleton } from '@/components/home/NewsSkeleton';
 import { newsService, Topic, NewsAnalysis } from '@/services/api/news';
+import { useAuth } from '@/contexts/AuthContext';
+import { runBackgroundRequest } from '@/services/api/backgroundRequest';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const NEWS_TAG_COLORS = {
   bg: '#1a2a3a',
@@ -50,6 +54,7 @@ function getUrgencyLabel(urgency?: string) {
 }
 
 export default function NoticiasScreen() {
+  const { accessToken } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [modalNews, setModalNews] = useState<NewsAnalysis | null>(null);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -77,6 +82,16 @@ export default function NoticiasScreen() {
         new Map(newsData.map((item) => [item.news_id, item])).values()
       );
       setNews(uniqueNews);
+
+      // Si no hay noticias analizadas y hay token, disparar analyze-full en background
+      if (uniqueNews.length === 0 && accessToken && API_BASE_URL) {
+        console.log('No hay noticias analizadas, disparando /news/analyze-full');
+        void runBackgroundRequest('/news/analyze-full', {
+          token: accessToken,
+          baseUrl: API_BASE_URL,
+          stripApiVersion: false,
+        });
+      }
     } catch (err) {
       console.error('Error loading news:', err);
       setError('Error al cargar las noticias');
