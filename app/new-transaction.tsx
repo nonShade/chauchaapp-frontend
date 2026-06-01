@@ -17,7 +17,10 @@ import {
 } from '@/services/api/transactions';
 import { LocalTransactionType, LocalFrequency } from '@/types/transaction';
 
-const todayISO = () => new Date().toISOString().split('T')[0];
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 const formatDateDisplay = (iso: string) => {
   const [y, m, d] = iso.split('-');
@@ -27,6 +30,7 @@ const formatDateDisplay = (iso: string) => {
 export default function NewTransactionScreen() {
   const { id: editId, mode, group } = useLocalSearchParams<{ id?: string; mode?: string; group?: string }>();
   const isEditMode = mode === 'edit' && !!editId;
+  const isGroupMode = group === 'true';
 
   const [gastoTypeId, setGastoTypeId] = useState('');
   const [ingresoTypeId, setIngresoTypeId] = useState('');
@@ -167,7 +171,8 @@ export default function NewTransactionScreen() {
       return;
     }
 
-    if (!category) {
+    const skipCategoryValidation = isGroupMode && !isGasto;
+    if (!skipCategoryValidation && !category) {
       setErrorMsg('Por favor, selecciona una categoría.');
       return;
     }
@@ -184,7 +189,7 @@ export default function NewTransactionScreen() {
       transaction_date: date,
     };
 
-    if (group === 'true') {
+    if (isGroupMode) {
       payload.is_group_transaction = true;
     }
 
@@ -195,7 +200,10 @@ export default function NewTransactionScreen() {
       } else {
         await createTransaction(payload);
       }
-      router.back();
+      router.navigate({
+        pathname: '/(tabs)/wallet',
+        params: { tab: isGroupMode ? 'group' : 'individual' }
+      });
     } catch (err: any) {
       const detail = err?.response?.data?.detail;
       if (Array.isArray(detail)) {
@@ -296,6 +304,7 @@ export default function NewTransactionScreen() {
             formattedDate={formatDateDisplay(date)}
             frequency={frequency}
             onFrequencyChange={setFrequency}
+            isGroupMode={isGroupMode}
           />
 
           {/* Error */}
@@ -309,7 +318,7 @@ export default function NewTransactionScreen() {
           {/* Save */}
           <TouchableOpacity
             style={[
-              styles.saveButton, 
+              styles.saveButton,
               { backgroundColor: isGasto ? APP_THEME.status.error : APP_THEME.status.success },
               isSaving && { opacity: 0.7 }
             ]}

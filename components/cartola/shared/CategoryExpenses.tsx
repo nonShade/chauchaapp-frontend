@@ -21,6 +21,7 @@ const SNAP_INTERVAL = SLIDE_WIDTH + SLIDE_GAP;
 
 interface CategoryExpensesProps {
   distribution: DistributionData[];
+  isGroup?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -31,7 +32,7 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export default function CategoryExpenses({ distribution }: CategoryExpensesProps) {
+export default function CategoryExpenses({ distribution, isGroup }: CategoryExpensesProps) {
   const expenseColor = APP_THEME.cards.expense.text;
   const scrollViewRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -120,7 +121,7 @@ export default function CategoryExpenses({ distribution }: CategoryExpensesProps
     <View style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="wallet-outline" size={22} color={expenseColor} />
-        <Text style={styles.title}>Gastos personales</Text>
+        <Text style={styles.title}>{isGroup ? 'Gastos grupales' : 'Gastos personales'}</Text>
       </View>
 
       {sortedDistribution.length === 0 ? (
