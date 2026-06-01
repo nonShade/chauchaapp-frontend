@@ -15,28 +15,23 @@ export default function Header({ userName = "Usuario" }) {
   };
 
   return (
-    <>
-      <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.profileSection}
-          onPress={() => router.push("profile")}
-        >
-          <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
-            <Image
-              source={require("@/assets/images/logo-chauchapp.png")}
-              style={{ width: 36, height: 36, borderRadius: 8 }}
-              resizeMode="contain"
-            />
-          </View>
-          <View style={styles.textBlock}>
-            <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>
-              {getGreeting()}
-            </Text>
-            <Text style={[styles.userName, { color: APP_THEME.text.primary }]}>
-              {userName}
-            </Text>
-          </View>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.profileSection}
+        onPress={() => router.push("/profile")}
+      >
+        <View style={styles.avatar}>
+          <Image 
+            source={require("@/assets/images/ChauchaApp.png")} 
+            style={{ width: 48, height: 48 }}
+            resizeMode="contain"
+          />
+        </View>
+        <View style={styles.textBlock}>
+          <Text style={[styles.greeting, { color: APP_THEME.text.secondary }]}>{getGreeting()}</Text>
+          <Text style={[styles.userName, { color: APP_THEME.text.primary }]}>{userName}</Text>
+        </View>
+      </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.notificationBtn}
@@ -69,9 +64,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,

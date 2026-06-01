@@ -22,6 +22,8 @@ export interface NewTransactionFormProps {
 
   frequency: LocalFrequency;
   onFrequencyChange: (frequency: LocalFrequency) => void;
+
+  isGroupMode?: boolean;
 }
 
 export default function NewTransactionForm({
@@ -35,8 +37,10 @@ export default function NewTransactionForm({
   formattedDate,
   frequency,
   onFrequencyChange,
+  isGroupMode,
 }: NewTransactionFormProps) {
   const isGasto = type === 'gasto';
+  const hideCategory = isGroupMode && !isGasto;
   const categories = isGasto ? GASTO_CATEGORIES : INGRESO_CATEGORIES;
   const accentColor = isGasto ? APP_THEME.cards.expense.text : APP_THEME.cards.income.text;
   const accentBackground = isGasto ? APP_THEME.cards.expense.background : APP_THEME.cards.income.background;
@@ -77,33 +81,35 @@ export default function NewTransactionForm({
       </View>
 
       {/* ---- Categoría ---- */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Categoría</Text>
-        <View style={styles.categoryGrid}>
-          {categories.map(cat => {
-            const isSelected = selectedCategory === cat;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[
-                  styles.categoryCard,
-                  isSelected && { borderColor: accentColor, backgroundColor: accentColor + '18' },
-                ]}
-                onPress={() => onCategoryChange(isSelected ? '' : cat)}
-              >
-                <Ionicons
-                  name={getCategoryIcon(cat)}
-                  size={24}
-                  color={isSelected ? accentColor : APP_THEME.text.secondary}
-                />
-                <Text style={[styles.categoryName, isSelected && { color: accentColor }]}>
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+      {!hideCategory && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Categoría</Text>
+          <View style={styles.categoryGrid}>
+            {categories.map(cat => {
+              const isSelected = selectedCategory === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[
+                    styles.categoryCard,
+                    isSelected && { borderColor: accentColor, backgroundColor: accentColor + '18' },
+                  ]}
+                  onPress={() => onCategoryChange(isSelected ? '' : cat)}
+                >
+                  <Ionicons
+                    name={getCategoryIcon(cat)}
+                    size={24}
+                    color={isSelected ? accentColor : APP_THEME.text.secondary}
+                  />
+                  <Text style={[styles.categoryName, isSelected && { color: accentColor }]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      )}
 
       {/* ---- Descripción ---- */}
       <View style={styles.section}>

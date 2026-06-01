@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { APP_THEME } from '@/constants/themes';
 import PersonalSummaryChart from '@/components/cartola/shared/PersonalSummaryChart';
 import MonthAccordion from '@/components/cartola/shared/MonthAccordion';
@@ -22,6 +22,7 @@ const formatCurrency = (value: number) => {
 };
 
 export default function CartolaScreen() {
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
   const { group, isLoading: isGroupLoading, hasGroup, refetch: refetchGroup } = useGroupData();
   const skipGroupFetch = activeTab === 'group' && !isGroupLoading && !hasGroup;
@@ -33,9 +34,13 @@ export default function CartolaScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (tab === 'group' || tab === 'individual') {
+        setActiveTab(tab);
+        router.setParams({ tab: '' });
+      }
       refetchGroup();
       refetch();
-    }, [refetch, refetchGroup])
+    }, [tab, refetch, refetchGroup])
   );
 
   const handleDelete = useCallback((transactionId: string) => {
@@ -107,7 +112,7 @@ export default function CartolaScreen() {
               <View style={[styles.personalModeTag, { backgroundColor: APP_THEME.group.modeTagBg }]}>
                 <Ionicons name="people-outline" size={12} color={APP_THEME.group.modeTagText} />
                 <Text style={[styles.personalModeText, { color: APP_THEME.group.modeTagText }]}>
-                  {hasGroup && group ? `Modo ${group.name}` : 'Modo Grupo Familiar'}
+                  Modo Grupo Familiar
                 </Text>
               </View>
             )}
@@ -158,11 +163,15 @@ export default function CartolaScreen() {
               size={18}
               color={activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText}
             />
-            <Text style={[
-              styles.toggleText,
-              { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
-            ]}>
-              {hasGroup && group ? group.name : 'Grupo Familiar'}
+            <Text 
+              style={[
+                styles.toggleText,
+                { color: activeTab === 'group' ? APP_THEME.group.primaryText : APP_THEME.components.tabs.inactiveText }
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {group?.name || 'Grupo Familiar'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -280,7 +289,7 @@ export default function CartolaScreen() {
             <GroupEmptyState />
           ) : (
             <View style={styles.groupContentContainer}>
-              <PersonalSummaryChart data={incomeVsExpenses} />
+              <PersonalSummaryChart data={incomeVsExpenses} isGroup={true} />
               <MonthAccordion
                 transactions={transactionsList}
                 summary={summary}
@@ -288,8 +297,8 @@ export default function CartolaScreen() {
                 onDelete={handleDelete}
                 isGroup={true}
               />
-              <PersonalTotals summary={historicalSummary} />
-              <CategoryExpenses distribution={distribution} />
+              <PersonalTotals summary={historicalSummary} isGroup={true} />
+              <CategoryExpenses distribution={distribution} isGroup={true} />
               <RecentTransactions
                 transactions={transactions}
                 onRefresh={refetch}

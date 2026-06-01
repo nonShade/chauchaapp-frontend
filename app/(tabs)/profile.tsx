@@ -68,19 +68,46 @@ export default function PerfilScreen() {
     }
 
     const token = accessToken;
+    let isActive = true;
 
     async function loadProfile() {
-      try {
-        setLoading(true);
-        setError(null);
-        const [profileData, incomeTypesData, newsTopicsData] = await Promise.all([
-          getUserProfile(token),
-          getIncomeTypes(),
-          getNewsTopics(),
-        ]);
+      setLoading(true);
+      setError(null);
+      setIncomeTypes([]);
+      setNewsTopics([]);
+      setFamilyGroup(null);
 
-        setIncomeTypes(incomeTypesData);
-        setNewsTopics(newsTopicsData);
+      void getIncomeTypes()
+        .then((incomeTypesData) => {
+          if (!isActive) return;
+          setIncomeTypes(incomeTypesData);
+        })
+        .catch((error) => {
+          console.error('Error al cargar tipos de ingreso:', error);
+        });
+
+      void getNewsTopics()
+        .then((newsTopicsData) => {
+          if (!isActive) return;
+          setNewsTopics(newsTopicsData);
+        })
+        .catch((error) => {
+          console.error('Error al cargar topics de noticias:', error);
+        });
+
+      void familyGroupService
+        .getFamilyGroup(token)
+        .then((familyGroupData) => {
+          if (!isActive || !familyGroupData) return;
+          setFamilyGroup(familyGroupData);
+        })
+        .catch(() => {
+          console.log('Usuario aún no tiene grupo familiar');
+        });
+
+      try {
+        const profileData = await getUserProfile(token);
+        if (!isActive) return;
 
         if (profileData) {
           setUserProfile(profileData);
@@ -88,32 +115,43 @@ export default function PerfilScreen() {
           setDraftEmail(profileData.email);
           setDraftIncomeTypeId(profileData.income_type_id);
           setDraftMonthlyIncome(String(Math.round(Number(profileData.monthly_income || '0'))));
-
-          // Cargar grupo familiar
-          try {
-            const familyGroupData = await familyGroupService.getFamilyGroup(token);
-            if (familyGroupData) {
-              setFamilyGroup(familyGroupData);
-            }
-          } catch (familyError) {
-            console.log('Usuario aún no tiene grupo familiar');
-          }
-
-          const topicsMap: Record<string, boolean> = {};
-          newsTopicsData.forEach((topic) => {
-            topicsMap[topic.id] = profileData.topics.includes(topic.id);
-          });
-          setSelectedTopics(topicsMap);
+        } else {
+          setUserProfile(null);
+          setDraftName('');
+          setDraftEmail('');
+          setDraftIncomeTypeId('');
+          setDraftMonthlyIncome('');
         }
       } catch (error) {
         console.error('Error al cargar el perfil:', error);
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     }
 
     loadProfile();
+
+    return () => {
+      isActive = false;
+    };
   }, [accessToken]);
+
+  useEffect(() => {
+    if (!userProfile) {
+      setSelectedTopics({});
+      return;
+    }
+
+    if (newsTopics.length === 0) return;
+
+    const topicsMap: Record<string, boolean> = {};
+    newsTopics.forEach((topic) => {
+      topicsMap[topic.id] = userProfile.topics.includes(topic.id);
+    });
+    setSelectedTopics(topicsMap);
+  }, [newsTopics, userProfile]);
 
   const syncDraftFromProfile = () => {
     if (!userProfile) return;
