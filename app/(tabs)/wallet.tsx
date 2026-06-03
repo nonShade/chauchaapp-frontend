@@ -29,7 +29,7 @@ export default function CartolaScreen() {
   const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution, refetch } = useCartolaData(activeTab === 'group', skipGroupFetch);
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
-  const balance = calculatedBalance !== 0 ? calculatedBalance : (summary?.total_balance || 0);
+  const balance = summary?.total_balance || 0;
   const savings = income * 0.2;
 
   useFocusEffect(
