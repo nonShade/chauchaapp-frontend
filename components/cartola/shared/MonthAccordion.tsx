@@ -26,7 +26,12 @@ const formatCurrency = (value: number) => {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
 export default function MonthAccordion({ transactions, summary, onDelete, onRefresh, isGroup }: MonthAccordionProps) {
@@ -35,8 +40,8 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
   const [editAmount, setEditAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const startEditing = (item: Transaction) => {
-    setEditingId(item.id);
+  const startEditing = (item: Transaction, uniqueKey: string) => {
+    setEditingId(uniqueKey);
     setEditDesc(item.description || '');
     setEditAmount(String(Math.round(item.amount)));
   };
@@ -56,7 +61,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
       setIsSaving(true);
       await updateTransaction(id, {
         description: editDesc,
-        amount: parseFloat(editAmount)
+        amount: parseFloat(editAmount),
       } as any);
       setEditingId(null);
       onRefresh?.();
@@ -66,21 +71,60 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
       setIsSaving(false);
     }
   };
+  const availableYears = useMemo(() => {
+    const list: Transaction[] = Array.isArray(transactions)
+      ? transactions
+      : (transactions as any)?.data || (transactions as any)?.items || [];
+    
+    const years = new Set<number>();
+    list.forEach(tx => {
+      if (tx.date) years.add(new Date(tx.date).getFullYear());
+    });
+    if (years.size === 0) years.add(new Date().getFullYear());
+    return Array.from(years).sort((a, b) => b - a);
+  }, [transactions]);
+
+  const [selectedYear, setSelectedYear] = useState<number>(availableYears[0] || new Date().getFullYear());
+
   const groupedMonths = useMemo(() => {
     const list: Transaction[] = Array.isArray(transactions)
       ? transactions
       : (transactions as any)?.data || (transactions as any)?.items || [];
 
-    const groups = groupTransactionsByMonth(list);
+    const filteredList = list.filter(tx => {
+      if (!tx.date) return false;
+      return new Date(tx.date).getFullYear() === selectedYear;
+    });
+
+    const groups = groupTransactionsByMonth(filteredList);
 
     return groups;
-  }, [transactions, summary]);
+  }, [transactions, summary, selectedYear]);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Detalle por mes</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Detalle por mes</Text>
+        {availableYears.length > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity 
+              onPress={() => setSelectedYear(prev => availableYears[availableYears.indexOf(prev) + 1] || prev)}
+              disabled={availableYears.indexOf(selectedYear) === availableYears.length - 1}
+            >
+              <Ionicons name="chevron-back" size={18} color={availableYears.indexOf(selectedYear) === availableYears.length - 1 ? APP_THEME.text.secondary + '40' : APP_THEME.text.secondary} />
+            </TouchableOpacity>
+            <Text style={{ color: APP_THEME.text.primary, fontWeight: 'bold' }}>{selectedYear}</Text>
+            <TouchableOpacity 
+              onPress={() => setSelectedYear(prev => availableYears[availableYears.indexOf(prev) - 1] || prev)}
+              disabled={availableYears.indexOf(selectedYear) === 0}
+            >
+              <Ionicons name="chevron-forward" size={18} color={availableYears.indexOf(selectedYear) === 0 ? APP_THEME.text.secondary + '40' : APP_THEME.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
       <View style={styles.list}>
         {groupedMonths.length === 0 ? (
@@ -141,12 +185,13 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                         </Text>
                       </View>
 
-                      {month.details.incomes.map(item => {
+                      {month.details.incomes.map((item, index) => {
+                        const uniqueKey = `${item.id}-income-${index}`;
                         const isVirtual = item.id?.startsWith('virtual-');
-                        const isEditing = editingId === item.id;
+                        const isEditing = editingId === uniqueKey;
 
                         return (
-                          <View key={item.id} style={styles.detailItem}>
+                          <View key={uniqueKey} style={styles.detailItem}>
                             <View style={styles.itemLeft}>
                               {isEditing ? (
                                 <TextInput
@@ -177,7 +222,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 </Text>
                               )}
 
-                              {!isVirtual && !isGroup && (
+                              {!isVirtual && (
                                 <View style={styles.actionsRow}>
                                   {isEditing ? (
                                     <>
@@ -194,7 +239,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                     </>
                                   ) : (
                                     <>
-                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item, uniqueKey)}>
                                         <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
                                       </TouchableOpacity>
                                       <TouchableOpacity style={styles.actionButton} onPress={() => {
@@ -225,11 +270,12 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                         </Text>
                       </View>
 
-                      {month.details.expenses.map(item => {
-                        const isEditing = editingId === item.id;
+                      {month.details.expenses.map((item, index) => {
+                        const uniqueKey = `${item.id}-expense-${index}`;
+                        const isEditing = editingId === uniqueKey;
 
                         return (
-                          <View key={item.id} style={styles.detailItem}>
+                          <View key={uniqueKey} style={styles.detailItem}>
                             <View style={styles.itemLeft}>
                               {isEditing ? (
                                 <TextInput
@@ -260,7 +306,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 </Text>
                               )}
 
-                              {!isGroup && (
+                              {(
                                 <View style={styles.actionsRow}>
                                   {isEditing ? (
                                     <>
@@ -277,7 +323,7 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                     </>
                                   ) : (
                                     <>
-                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item)}>
+                                      <TouchableOpacity style={styles.actionButton} onPress={() => startEditing(item, uniqueKey)}>
                                         <Ionicons name="pencil-outline" size={14} color={APP_THEME.text.secondary} />
                                       </TouchableOpacity>
                                       <TouchableOpacity style={styles.actionButton} onPress={() => {
