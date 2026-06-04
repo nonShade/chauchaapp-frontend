@@ -18,6 +18,8 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { APP_THEME } from "@/constants/themes";
 import { useAuth } from "@/contexts/AuthContext";
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+
 const LOGIN_COLORS = {
   background: APP_THEME.background.primary,
   cardBackground: APP_THEME.card.background,
@@ -77,7 +79,7 @@ export default function LoginScreen() {
     if (emailErr || passErr) return;
 
     try {
-      const response = await fetch("http://localhost:8001/v1/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

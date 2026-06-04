@@ -2,6 +2,7 @@
   "expo": {
     "name": "chauchaapp-frontend",
     "slug": "chauchaapp-frontend",
+    "owner": "nonshade",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,6 +13,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.nonshade.chauchaapp",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3e9b782e-22b5-4afe-b22f-9dadb4d262a8"
+      }
     }
   }
 }
