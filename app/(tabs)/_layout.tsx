@@ -5,8 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from 'expo-secure-store';
 import { APP_THEME } from "@/constants/themes";
 import Header from "@/components/home/Header";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const [userName, setUserName] = useState("Usuario");
 
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: true,
         header: () => (
-          <SafeAreaView style={{ backgroundColor: APP_THEME.card.background }}>
+          <View style={{ backgroundColor: APP_THEME.card.background, paddingTop: insets.top }}>
             <Header userName={userName} />
-          </SafeAreaView>
+          </View>
         ),
         tabBarShowLabel: false,
         tabBarStyle: {
