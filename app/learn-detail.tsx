@@ -20,6 +20,7 @@ import {
   completeModuleSection,
 } from '@/services/api/learnModules';
 import { LearnModuleDetailResponse } from '@/types/modulesTypes';
+import { LearnDetailSkeleton } from '@/components/learn/LearnDetailSkeleton';
 
 export interface LearnDetailViewProps {
   moduleSlug: string;
@@ -311,10 +312,7 @@ useEffect(() => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
-        <Text style={styles.loadingText}>Cargando módulo...</Text>
-      </View>
+      <LearnDetailSkeleton />
     );
   }
 
@@ -813,17 +811,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#3FD364',
   },
 
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: APP_THEME.background.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: APP_THEME.text.primary,
-    fontSize: 18,
-    marginTop: 12,
-  },
   errorContainer: {
     flex: 1,
     backgroundColor: APP_THEME.background.primary,

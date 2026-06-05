@@ -12,7 +12,6 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { APP_THEME } from "@/constants/themes";
@@ -243,6 +242,10 @@ export default function LoginScreen() {
                 ]}
                 placeholder="Tu contraseña"
                 placeholderTextColor={LOGIN_COLORS.textSecondary}
+                autoCapitalize="none"
+                autoCorrect={false}
+                textContentType="password"
+                autoComplete="password"
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={(text) => {
@@ -255,22 +258,20 @@ export default function LoginScreen() {
                 }}
               />
               <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
+                onPress={() => setShowPassword((prev) => !prev)}
+                style={styles.eyeButton}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                {showPassword ? (
-                  <SimpleLineIcons
-                    name="eye"
-                    color={LOGIN_COLORS.textSecondary}
-                    size={20}
-                  />
-                ) : (
-                  <Feather
-                    name="eye-off"
-                    color={LOGIN_COLORS.textSecondary}
-                    size={20}
-                  />
-                )}
+                <Feather
+                  name={showPassword ? "eye" : "eye-off"}
+                  color={LOGIN_COLORS.textSecondary}
+                  size={20}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -376,17 +377,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     height: 48,
     flexDirection: "row",
     alignItems: "center",
   },
   passwordInput: {
     flex: 1,
-    fontSize: 14,
+    height: "100%",
+    paddingVertical: 0,
+    fontSize: 16,
+    textAlignVertical: "center",
   },
-  eyeIcon: {
-    padding: 8,
+  eyeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingLeft: 8,
+    paddingRight: 4,
   },
   loginButton: {
     borderRadius: 8,

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -20,6 +19,8 @@ import { getLearnModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
 import PlanningCard from '@/components/learn/PlanningCard';
+import { LearnModulesSkeleton } from '@/components/learn/LearnModulesSkeleton';
+import { PlanningSkeleton } from '@/components/learn/PlanningSkeleton';
 import { getFinancialPlanningTips } from '@/services/api/financialPlanning';
 import { FinancialPlanningTip } from '@/types/planningTypes';
 
@@ -120,9 +121,13 @@ export default function AprenderScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
-        <Text style={styles.loadingText}>Cargando módulos...</Text>
+      <View style={styles.container}>
+        <Text style={styles.screenTitle}>Aprender</Text>
+        <Text style={styles.screenSubtitle}>Educacion financiera con quizzes interactivos</Text>
+        <View style={styles.tabsWrapper}>
+          <ModulePlanningTabs value={activeTab} onChange={setActiveTab} />
+        </View>
+        <LearnModulesSkeleton />
       </View>
     );
   }
@@ -183,10 +188,7 @@ export default function AprenderScreen() {
       </View>
       {activeTab === 'planning' ? (
         planningLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
-            <Text style={styles.loadingText}>Cargando planificación...</Text>
-          </View>
+          <PlanningSkeleton />
         ) : planningError ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{planningError}</Text>
@@ -457,17 +459,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: APP_THEME.background.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: APP_THEME.text.primary,
-    fontSize: 16,
-    marginTop: 12,
-  },
   errorContainer: {
     flex: 1,
     backgroundColor: APP_THEME.background.primary,
