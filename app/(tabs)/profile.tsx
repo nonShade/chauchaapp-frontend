@@ -44,7 +44,6 @@ export default function PerfilScreen() {
   const [newsTopics, setNewsTopics] = useState<TopicOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -72,7 +71,6 @@ export default function PerfilScreen() {
 
     async function loadProfile() {
       setLoading(true);
-      setError(null);
       setIncomeTypes([]);
       setNewsTopics([]);
       setFamilyGroup(null);
@@ -734,7 +732,7 @@ export default function PerfilScreen() {
                 {familyGroup?.members.map((member, index) => {
                   const initials = (member.first_name.substring(0, 1) + (member.last_name?.substring(0, 1) || '')).toUpperCase();
                   const isAdmin = index === 0;
-                  const contribution = isAdmin ? '60%' : '40%';
+                  const contribution = `${member.income_contribution_percentage}%`;
                   
                   return (
                     <View key={member.id} style={styles.memberRow}>
@@ -746,7 +744,7 @@ export default function PerfilScreen() {
                           <Text style={styles.memberName}>{member.first_name} {member.last_name}</Text>
                           {isAdmin && <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Admin</Text></View>}
                         </View>
-                        <Text style={styles.memberContribution}>~ {contribution} contribución</Text>
+                        <Text style={styles.memberContribution}>Contribución: {contribution}</Text>
                       </View>
                       {!isAdmin && (
                         <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>

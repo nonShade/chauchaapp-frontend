@@ -3,6 +3,7 @@ export interface FamilyMember {
   first_name: string;
   last_name: string;
   email: string;
+  income_contribution_percentage: number;
 }
 
 export interface FamilyGroup {

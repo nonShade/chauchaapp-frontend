@@ -9,16 +9,18 @@ export interface CreateFamilyGroupResponse {
     first_name: string;
     last_name: string;
     email: string;
+    income_contribution_percentage: number;
   };
-  members: Array<{
+  members: {
     user_id: string;
     first_name: string;
     last_name: string;
     email: string;
-  }>;
+    income_contribution_percentage: number;
+  }[];
 }
 
-export interface GetFamilyGroupResponse extends CreateFamilyGroupResponse {}
+export type GetFamilyGroupResponse = CreateFamilyGroupResponse;
 
 export interface InvitationResponse {
   message: string;
@@ -130,6 +132,7 @@ class FamilyGroupService {
       first_name: data.admin.first_name,
       last_name: data.admin.last_name,
       email: data.admin.email,
+      income_contribution_percentage: data.admin.income_contribution_percentage ?? 0,
     };
 
     const members: FamilyMember[] = [
@@ -139,6 +142,7 @@ class FamilyGroupService {
         first_name: m.first_name,
         last_name: m.last_name,
         email: m.email,
+        income_contribution_percentage: m.income_contribution_percentage ?? 0,
       })),
     ];
 
