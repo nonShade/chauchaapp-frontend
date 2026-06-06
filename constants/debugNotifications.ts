@@ -1,0 +1,73 @@
+import { NOTIFICATION_TYPES } from "@/constants/notificationConfig";
+import { Notification } from "@/types/notification";
+
+const now = Date.now();
+
+export const DEBUG_NOTIFICATIONS: Notification[] = [
+  {
+    notification_id: "debug-1",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.GROUP_JOIN_REQUEST,
+    notification_status: "unread",
+    message: "Carlos Pérez te invitó a unirte al grupo Gastos Casa. ¿Deseas aceptar?",
+    scheduled_date: new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "inv-debug-001",
+    reference_type: "group_invitation",
+    seen_at: null,
+  },
+  {
+    notification_id: "debug-2",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.TRANSACTION_REMINDER,
+    notification_status: "unread",
+    message: "En 3 días vence tu gasto \"Dividendo Departamento\" por $420.000. Revisa tu saldo.",
+    scheduled_date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "tx-debug-002",
+    reference_type: "transaction",
+    seen_at: null,
+  },
+  {
+    notification_id: "debug-3",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.TRANSACTION_REMINDER,
+    notification_status: "read",
+    message: "Esta semana tienes un gasto programado: \"TAG autopista\" por $35.000 el 25 de abril.",
+    scheduled_date: new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "tx-debug-003",
+    reference_type: "transaction",
+    seen_at: new Date(now - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    notification_id: "debug-4",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.TIP,
+    notification_status: "unread",
+    message: "Ahorra al menos el 20% de tus ingresos mensuales para crear un fondo de emergencia.",
+    scheduled_date: new Date(now - 0.5 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "",
+    reference_type: "tip",
+    seen_at: null,
+  },
+  {
+    notification_id: "debug-5",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.EDUCATIONAL,
+    notification_status: "unread",
+    message: "Nuevo módulo disponible: Inversión para principiantes. ¡Aprende a hacer crecer tu dinero!",
+    scheduled_date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "module-debug-005",
+    reference_type: "educational_module",
+    seen_at: null,
+  },
+  {
+    notification_id: "debug-6",
+    user_id: "debug",
+    notification_type: NOTIFICATION_TYPES.SYSTEM_INFO,
+    notification_status: "read",
+    message: "ChauchaApp se actualizó a la versión 2.1.0. Revisa las novedades en el menú principal.",
+    scheduled_date: new Date(now - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    reference_id: "",
+    reference_type: "system",
+    seen_at: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
