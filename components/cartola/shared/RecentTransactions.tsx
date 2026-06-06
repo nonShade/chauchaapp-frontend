@@ -23,7 +23,12 @@ const formatCurrency = (value: number) => {
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getFullYear()}`;
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
 export default function RecentTransactions({ transactions, onRefresh, onDelete, isGroup }: RecentTransactionsProps) {
@@ -32,8 +37,8 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
   const [editAmount, setEditAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const startEditing = (item: Transaction) => {
-    setEditingId(item.id);
+  const startEditing = (item: Transaction, uniqueKey: string) => {
+    setEditingId(uniqueKey);
     setEditDesc(item.description || '');
     setEditAmount(String(Math.round(item.amount)));
   };
@@ -52,7 +57,7 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
       setIsSaving(true);
       await updateTransaction(id, {
         description: editDesc,
-        amount: parseFloat(editAmount)
+        amount: parseFloat(editAmount),
       } as any);
       setEditingId(null);
       onRefresh?.();
@@ -77,10 +82,13 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
         {list.length === 0 ? (
           <Text style={{ color: APP_THEME.text.secondary }}>No hay transacciones recientes.</Text>
         ) : (
-          list.slice(0, 5).map((item: Transaction) => {
-            const isEditing = editingId === item.id;
+          [...list].sort((a: Transaction, b: Transaction) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          ).slice(0, 5).map((item: Transaction, index: number) => {
+            const uniqueKey = `${item.id}-${index}`;
+            const isEditing = editingId === uniqueKey;
             return (
-              <View key={item.id} style={styles.item}>
+              <View key={uniqueKey} style={styles.item}>
                 <View style={styles.leftContent}>
                   <View style={[
                     styles.iconContainer,
@@ -134,7 +142,7 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
                   )}
 
                   <View style={styles.actionsRow}>
-                    {!isGroup && (
+                    {(
                       isEditing ? (
                         <>
                           {isSaving ? (
@@ -150,7 +158,7 @@ export default function RecentTransactions({ transactions, onRefresh, onDelete, 
                         </>
                       ) : (
                         <>
-                          <TouchableOpacity style={styles.actionBtn} onPress={() => startEditing(item)}>
+                          <TouchableOpacity style={styles.actionBtn} onPress={() => startEditing(item, uniqueKey)}>
                             <Ionicons name="pencil-outline" size={13} color={APP_THEME.text.secondary} />
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.actionBtn} onPress={() => {
