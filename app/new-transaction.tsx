@@ -45,7 +45,7 @@ export default function NewTransactionScreen() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [date] = useState(todayISO());
+  const [date, setDate] = useState(todayISO());
   const [frequency, setFrequency] = useState<LocalFrequency>('once');
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -189,7 +189,7 @@ export default function NewTransactionScreen() {
       transaction_date: date,
     };
 
-    if (isGroupMode) {
+    if (isGroupMode && category !== 'Sueldo') {
       payload.is_group_transaction = true;
     }
 
@@ -301,6 +301,7 @@ export default function NewTransactionScreen() {
             description={description}
             onDescriptionChange={setDescription}
             date={date}
+            onDateChange={setDate}
             formattedDate={formatDateDisplay(date)}
             frequency={frequency}
             onFrequencyChange={setFrequency}

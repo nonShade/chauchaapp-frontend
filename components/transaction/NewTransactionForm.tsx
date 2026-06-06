@@ -18,6 +18,7 @@ export interface NewTransactionFormProps {
   onDescriptionChange: (description: string) => void;
 
   date: string;
+  onDateChange: (date: string) => void;
   formattedDate: string;
 
   frequency: LocalFrequency;
@@ -34,6 +35,8 @@ export default function NewTransactionForm({
   onAmountChange,
   description,
   onDescriptionChange,
+  date,
+  onDateChange,
   formattedDate,
   frequency,
   onFrequencyChange,
@@ -132,7 +135,14 @@ export default function NewTransactionForm({
         <Text style={styles.subLabel}>{dateHint}</Text>
         <View style={styles.dateContainer}>
           <Ionicons name={NAV_ICONS.calendar} size={18} color={APP_THEME.text.secondary} />
-          <Text style={styles.dateText}>{formattedDate}</Text>
+          <TextInput
+            style={[styles.dateText, { flex: 1, padding: 0 }]}
+            value={date}
+            onChangeText={onDateChange}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor={APP_THEME.text.secondary + '80'}
+            maxLength={10}
+          />
           <Ionicons name={NAV_ICONS.calendarFill} size={18} color={APP_THEME.text.secondary} style={{ marginLeft: 'auto' }} />
         </View>
       </View>

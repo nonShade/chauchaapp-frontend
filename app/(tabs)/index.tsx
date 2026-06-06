@@ -45,7 +45,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!isLoading && summary) {
-      setBalance(calculatedBalance !== 0 ? calculatedBalance : (summary.total_balance || 0));
+      setBalance(summary.total_balance || 0);
       setIngresos(summary.total_income || 0);
       setGastos(summary.total_expenses || 0);
     }

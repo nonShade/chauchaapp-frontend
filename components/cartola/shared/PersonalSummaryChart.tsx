@@ -23,20 +23,26 @@ const formatYAxis = (val: number): string => {
 };
 
 export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryChartProps) {
-  const [activeTab, setActiveTab] = useState<'income' | 'expense'>('income');
+  const [activeTab, setActiveTab] = useState<'income' | 'both' | 'expense'>('both');
 
   const rawLabels = data?.labels ?? [];
   const incomes = data?.income ?? [];
   const expenses = data?.expense ?? [];
 
   const isIncome = activeTab === 'income';
-  const activeData = isIncome ? incomes : expenses;
+  const isExpense = activeTab === 'expense';
+  const isBoth = activeTab === 'both';
+
   const labels = rawLabels;
 
-  const activeColor = isIncome ? APP_THEME.cards.income.text : APP_THEME.cards.expense.text;
-  const legendLabel = isIncome ? 'Ingresos mensuales' : 'Gastos mensuales';
+  const maxIncome = incomes.length > 0 ? Math.max(...incomes) : 0;
+  const maxExpense = expenses.length > 0 ? Math.max(...expenses) : 0;
 
-  const maxValue = activeData.length > 0 ? Math.max(...activeData, 1) : 1;
+  let maxValue = 1;
+  if (isIncome) maxValue = Math.max(maxIncome, 1);
+  else if (isExpense) maxValue = Math.max(maxExpense, 1);
+  else maxValue = Math.max(maxIncome, maxExpense, 1);
+
   const niceMax = Math.ceil(maxValue / 250_000) * 250_000 || 1_000_000;
   const yTicks = [niceMax, niceMax * 0.75, niceMax * 0.5, niceMax * 0.25, 0];
 
@@ -49,12 +55,18 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
     return CHART_HEIGHT - ratio * CHART_HEIGHT;
   };
 
-  const points = activeData.map((val, idx) => ({
+  const incomePoints = incomes.map((val, idx) => ({
     x: X_PAD + idx * xStep,
     y: getY(val),
   }));
 
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+  const expensePoints = expenses.map((val, idx) => ({
+    x: X_PAD + idx * xStep,
+    y: getY(val),
+  }));
+
+  const incomeLinePath = incomePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
+  const expenseLinePath = expensePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ');
 
   const hasData = n > 0;
 
@@ -66,6 +78,25 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
       </View>
 
       <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[
+            styles.tab, 
+            isBoth && {
+              backgroundColor: isGroup ? APP_THEME.group.modeTagBg : APP_THEME.cards.balance.tagBg,
+              borderWidth: 1,
+              borderColor: isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.border,
+              margin: 3,
+              borderRadius: 9,
+            }
+          ]}
+          onPress={() => setActiveTab('both')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.tabText, isBoth && { color: isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText, fontWeight: '700' }]}>
+            Ambos
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.tab, isIncome && styles.tabActiveIncome]}
           onPress={() => setActiveTab('income')}
@@ -82,16 +113,16 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tab, !isIncome && styles.tabActiveExpense]}
+          style={[styles.tab, isExpense && styles.tabActiveExpense]}
           onPress={() => setActiveTab('expense')}
           activeOpacity={0.8}
         >
           <Ionicons
             name="trending-down-outline"
             size={14}
-            color={!isIncome ? APP_THEME.cards.expense.text : APP_THEME.text.secondary}
+            color={isExpense ? APP_THEME.cards.expense.text : APP_THEME.text.secondary}
           />
-          <Text style={[styles.tabText, !isIncome && { color: APP_THEME.cards.expense.text, fontWeight: '700' }]}>
+          <Text style={[styles.tabText, isExpense && { color: APP_THEME.cards.expense.text, fontWeight: '700' }]}>
             Gastos
           </Text>
         </TouchableOpacity>
@@ -124,16 +155,27 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
                 );
               })}
 
-              {n > 1 && (
-                <Path d={linePath} fill="none" stroke={activeColor} strokeWidth={2.5} />
+              {(isIncome || isBoth) && n > 1 && (
+                <Path d={incomeLinePath} fill="none" stroke={APP_THEME.cards.income.text} strokeWidth={2.5} />
               )}
-
-              {points.map((p, idx) => (
+              {(isIncome || isBoth) && incomePoints.map((p, idx) => (
                 <Circle
-                  key={`pt-${idx}`}
+                  key={`inc-pt-${idx}`}
                   cx={p.x} cy={p.y}
                   r={4}
-                  fill={activeColor}
+                  fill={APP_THEME.cards.income.text}
+                />
+              ))}
+
+              {(isExpense || isBoth) && n > 1 && (
+                <Path d={expenseLinePath} fill="none" stroke={APP_THEME.cards.expense.text} strokeWidth={2.5} />
+              )}
+              {(isExpense || isBoth) && expensePoints.map((p, idx) => (
+                <Circle
+                  key={`exp-pt-${idx}`}
+                  cx={p.x} cy={p.y}
+                  r={4}
+                  fill={APP_THEME.cards.expense.text}
                 />
               ))}
 
@@ -156,8 +198,19 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
 
       {hasData && (
         <View style={styles.legend}>
-          <View style={[styles.legendDot, { backgroundColor: activeColor }]} />
-          <Text style={styles.legendText}>{legendLabel}</Text>
+          {(isIncome || isBoth) && (
+            <>
+              <View style={[styles.legendDot, { backgroundColor: APP_THEME.cards.income.text }]} />
+              <Text style={styles.legendText}>Ingresos</Text>
+            </>
+          )}
+          {isBoth && <View style={{ width: 16 }} />}
+          {(isExpense || isBoth) && (
+            <>
+              <View style={[styles.legendDot, { backgroundColor: APP_THEME.cards.expense.text }]} />
+              <Text style={styles.legendText}>Gastos</Text>
+            </>
+          )}
         </View>
       )}
     </View>
