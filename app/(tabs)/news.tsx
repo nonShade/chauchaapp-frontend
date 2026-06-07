@@ -9,18 +9,13 @@ import {
   Modal,
   Pressable,
   TouchableWithoutFeedback,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { PiggyBank } from 'lucide-react-native';
 import { APP_THEME } from '@/constants/themes';
 import NewsCard from '@/components/home/NewsCard';
 import { NewsSkeleton } from '@/components/home/NewsSkeleton';
-import { newsService, Topic, NewsAnalysis } from '@/services/api/news';
-import { useAuth } from '@/contexts/AuthContext';
-import { runBackgroundRequest } from '@/services/api/backgroundRequest';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+import { newsService, NewsAnalysis } from '@/services/api/news';
 
 const NEWS_TAG_COLORS = {
   bg: '#1a2a3a',
@@ -54,15 +49,13 @@ function getUrgencyLabel(urgency?: string) {
 }
 
 export default function NoticiasScreen() {
-  const { accessToken } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [modalNews, setModalNews] = useState<NewsAnalysis | null>(null);
-  const [topics, setTopics] = useState<Topic[]>([]);
   const [news, setNews] = useState<NewsAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load topics and news on mount
+  // Load analyzed news on mount
   useEffect(() => {
     loadData();
   }, []);
@@ -71,27 +64,13 @@ export default function NoticiasScreen() {
     try {
       setLoading(true);
       setError(null);
-      const [topicsData, newsData] = await Promise.all([
-        newsService.getTopics(),
-        newsService.getAnalyzedNews(),
-      ]);
-      setTopics(topicsData);
+      const newsData = await newsService.getAnalyzedNews();
       
       // Deduplicar noticias por news_id
       const uniqueNews = Array.from(
         new Map(newsData.map((item) => [item.news_id, item])).values()
       );
       setNews(uniqueNews);
-
-      // Si no hay noticias analizadas y hay token, disparar analyze-full en background
-      if (uniqueNews.length === 0 && accessToken && API_BASE_URL) {
-        console.log('No hay noticias analizadas, disparando /news/analyze-full');
-        void runBackgroundRequest('/news/analyze-full', {
-          token: accessToken,
-          baseUrl: API_BASE_URL,
-          stripApiVersion: false,
-        });
-      }
     } catch (err) {
       console.error('Error loading news:', err);
       setError('Error al cargar las noticias');
