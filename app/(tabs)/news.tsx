@@ -171,10 +171,10 @@ export default function NoticiasScreen() {
       )}
 
       {/* News Detail Modal */}
-      <Modal visible={!!modalNews} animationType="fade" transparent statusBarTranslucent>
-        <TouchableWithoutFeedback onPress={() => setModalNews(null)}>
-          <View style={styles.modalOverlay}>
-            <Pressable style={styles.modalCard} onPress={() => {}}>
+      <Modal visible={!!modalNews} animationType="fade" transparent statusBarTranslucent onRequestClose={() => setModalNews(null)}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setModalNews(null)} />
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={styles.impactBadgeContainer}>
                 <View
@@ -303,9 +303,8 @@ export default function NoticiasScreen() {
                 Ver artículo completo
               </Text>
             </TouchableOpacity>
-            </Pressable>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
     </View>
   );

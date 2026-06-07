@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Notification } from "@/types/notification";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -9,6 +10,46 @@ import {
 } from "@/services/api/notifications";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { getMeta } from "@/constants/notificationConfig";
+import { DEBUG_NOTIFICATIONS } from "@/constants/debugNotifications";
+
+const STORAGE_KEY = "debug_notifications_seen";
+
+// Lee los seen_at guardados y los aplica sobre las notificaciones debug base
+async function loadDebugNotifications(): Promise<Notification[]> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const seenMap: Record<string, string> = raw ? JSON.parse(raw) : {};
+    return DEBUG_NOTIFICATIONS.map((n) => ({
+      ...n,
+      seen_at: seenMap[n.notification_id] ?? n.seen_at,
+    }));
+  } catch {
+    return DEBUG_NOTIFICATIONS;
+  }
+}
+
+// Guarda el seen_at de una notificación debug
+async function saveDebugSeen(id: string, seenAt: string): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const seenMap: Record<string, string> = raw ? JSON.parse(raw) : {};
+    seenMap[id] = seenAt;
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seenMap));
+  } catch {}
+}
+
+// Borra todos los seen_at guardados (reset a "nuevas")
+export async function resetDebugNotifications(): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEY);
+}
+
+// Merge debug + backend sin duplicados
+function mergeNotifications(debug: Notification[], backend: Notification[]): Notification[] {
+  return [...debug, ...backend].filter(
+    (item, index, self) =>
+      index === self.findIndex((n) => n.notification_id === item.notification_id)
+  );
+}
 
 export interface UseNotificationsReturn {
   notifications:         Notification[];
@@ -52,9 +93,13 @@ export function useNotifications(): UseNotificationsReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchNotifications(accessToken);
-      setNotifications(data);
-      await pushNewNotifications(data);
+      const [debugData, backendData] = await Promise.all([
+        loadDebugNotifications(),
+        fetchNotifications(accessToken),
+      ]);
+      const merged = mergeNotifications(debugData, backendData);
+      setNotifications(merged);
+      await pushNewNotifications(merged);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar notificaciones");
     } finally {
@@ -65,7 +110,9 @@ export function useNotifications(): UseNotificationsReturn {
   const removeNotification = useCallback(
     async (notificationId: string) => {
       try {
-        await deleteNotification(notificationId, accessToken);
+        if (!notificationId.startsWith("debug-")) {
+          await deleteNotification(notificationId, accessToken);
+        }
         setNotifications((prev) =>
           prev.filter((n) => n.notification_id !== notificationId)
         );
@@ -79,8 +126,10 @@ export function useNotifications(): UseNotificationsReturn {
   const acceptInvitation = useCallback(
     async (invitationId: string, notificationId: string) => {
       try {
-        await acceptGroupInvitation(invitationId, accessToken);
-        await deleteNotification(notificationId, accessToken);
+        if (!notificationId.startsWith("debug-")) {
+          await acceptGroupInvitation(invitationId, accessToken);
+          await deleteNotification(notificationId, accessToken);
+        }
         setNotifications((prev) =>
           prev.filter((n) => n.notification_id !== notificationId)
         );
@@ -94,8 +143,10 @@ export function useNotifications(): UseNotificationsReturn {
   const declineInvitation = useCallback(
     async (invitationId: string, notificationId: string) => {
       try {
-        await declineGroupInvitation(invitationId, accessToken);
-        await deleteNotification(notificationId, accessToken);
+        if (!notificationId.startsWith("debug-")) {
+          await declineGroupInvitation(invitationId, accessToken);
+          await deleteNotification(notificationId, accessToken);
+        }
         setNotifications((prev) =>
           prev.filter((n) => n.notification_id !== notificationId)
         );
@@ -107,11 +158,17 @@ export function useNotifications(): UseNotificationsReturn {
   );
 
   const markAllAsSeen = useCallback(() => {
+    const now = new Date().toISOString();
     setNotifications((prev) =>
-      prev.map((n) => ({
-        ...n,
-        seen_at: n.seen_at ?? new Date().toISOString(),
-      }))
+      prev.map((n) => {
+        if (!n.seen_at) {
+          if (n.notification_id.startsWith("debug-")) {
+            saveDebugSeen(n.notification_id, now);
+          }
+          return { ...n, seen_at: now };
+        }
+        return n;
+      })
     );
   }, []);
 
