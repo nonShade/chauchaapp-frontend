@@ -29,7 +29,7 @@ export default function CartolaScreen() {
   const { isLoading, error, summary, transactions, calculatedBalance, calculatedIncome, calculatedExpense, incomeVsExpenses, distribution, refetch } = useCartolaData(activeTab === 'group', skipGroupFetch);
   const income = summary?.total_income || 0;
   const expense = summary?.total_expenses || 0;
-  const balance = calculatedBalance !== 0 ? calculatedBalance : (summary?.total_balance || 0);
+  const balance = summary?.total_balance || 0;
   const savings = income * 0.2;
 
   useFocusEffect(
@@ -308,7 +308,7 @@ export default function CartolaScreen() {
 
               <View style={styles.emptySection}>
                 <View style={styles.emptySectionHeader}>
-                  <Ionicons name="people-outline" size={20} color={APP_THEME.text.primary} />
+                  <Ionicons name="people-outline" size={20} color={APP_THEME.group.primary} />
                   <Text style={styles.emptySectionTitle}>Miembros del Grupo</Text>
                 </View>
                 <View style={[styles.emptySectionBody, { alignItems: 'flex-start', paddingHorizontal: 20 }]}>
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   },
   emptySection: {
     borderWidth: 1,
-    borderColor: APP_THEME.cards.expense.border,
+    borderColor: APP_THEME.group.primary,
     backgroundColor: APP_THEME.card.background,
     borderRadius: 16,
     padding: 20,

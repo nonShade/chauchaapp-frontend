@@ -8,6 +8,7 @@ export interface IncomeTypeOption {
 export interface TopicOption {
   id: string;
   name: string;
+  description?: string;
 }
 
 export interface UserProfile {

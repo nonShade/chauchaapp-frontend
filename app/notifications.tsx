@@ -10,65 +10,24 @@ import {
   Alert,
   ViewStyle,
   TextStyle,
-  Animated,
 } from "react-native";
 import { useEffect } from "react";
 import { useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { APP_THEME } from "@/constants/themes";
 import { useNotifications } from "@/hooks/useNotification";
 import { Notification } from "@/types/notification";
 import {
   getMeta,
   getCategory,
-  NOTIFICATION_TYPES,
+  NOTIFICATION_COLORS,
 } from "@/constants/notificationConfig";
 
-// ─── Colores del tema ─────────────────────────────────────────────────────────
-const COLORS = {
-  bg:          (typeof APP_THEME.background === "string"
-                  ? APP_THEME.background
-                  : "#06090f") as string,
-  textPrimary: (APP_THEME.text?.primary   ?? "#f1f5f9") as string,
-  textSecond:  (APP_THEME.text?.secondary ?? "#64748b") as string,
-  cardBorder:  (APP_THEME.card?.border    ?? "#1e293b") as string,
-} as const;
+const resetDebugNotifications: (() => Promise<void>) | null = __DEV__
+  ? require("@/hooks/useNotification.dev").resetDebugNotifications
+  : null;
 
 // ─── Paleta de colores ────────────────────────────────────────────────────────
-const C = {
-  // Grupos / invitaciones
-  groupBg:        "#0a1912",
-  groupBorder:    "#0d2b1c",
-  groupBadgeBg:   "#0d2b1c",
-  groupAccent:    "#20a353",
-
-  // Tips / educacional
-  tipBg:          "#10141b",
-  tipBorder:      "#292e36",
-  tipBadgeBg:     "#1d2229",
-  tipAccent:      "#ffffff",
-
-  // Recordatorios (paleta naranja fija)
-  recBg:          "#ff98451a",
-  recBorder:      "#ff984540",
-  recBadgeBg:     "#ff984526",
-  recAccent:      "#ff9845",
-
-  // Otras notificaciones (system_info, unknown)
-  // color-mix(chart-2 10%, #06090f)
-  otherBg:        "#0a1912",
-  otherBorder:    "#0d2b1c",
-  otherBadgeBg:   "#0d2b1c",
-  otherAccent:    "#00a3cd",
-
-  // Texto de mensaje
-  msgText:        "#8b8f95",
-
-  // Badge "Nuevo" — fondo/letra igual al icono de grupos
-  newBadgeBg:     "#0d2b1c",
-  newBadgeText:   "#20a353",
-} as const;
-
+const COLORS = NOTIFICATION_COLORS;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function daysAgo(iso: string): string {
@@ -100,12 +59,12 @@ function TimeRow({ item, isNew, badgeVariant }: {
   isNew:        boolean;
   badgeVariant: "group" | "reminder" | "tip" | "other";
 }) {
-  const badgeBg   = badgeVariant === "reminder" ? C.recBadgeBg
-                  : badgeVariant === "tip"       ? C.tipBadgeBg
-                  : C.newBadgeBg;
-  const badgeTxt  = badgeVariant === "reminder" ? C.recAccent
-                  : badgeVariant === "tip"       ? C.tipAccent
-                  : C.newBadgeText;
+  const badgeBg   = badgeVariant === "reminder" ? COLORS.recBadgeBg
+                  : badgeVariant === "tip"       ? COLORS.tipBadgeBg
+                  : COLORS.newBadgeBg;
+  const badgeTxt  = badgeVariant === "reminder" ? COLORS.recAccent
+                  : badgeVariant === "tip"       ? COLORS.tipAccent
+                  : COLORS.newBadgeText;
   return (
     <View style={styles.timeRow}>
       <Text style={styles.timeText}>{daysAgo(item.scheduled_date)}</Text>
@@ -130,8 +89,8 @@ function ActionItem({ item, onAccept, onDecline }: {
   return (
     <View style={[styles.item, styles.itemGroup]}>
       <View style={styles.itemHeader}>
-        <View style={[styles.iconBadge, { backgroundColor: C.groupBadgeBg } as ViewStyle]}>
-          <Ionicons name={meta.icon} size={22} color={C.groupAccent} />
+        <View style={[styles.iconBadge, { backgroundColor: COLORS.groupBadgeBg } as ViewStyle]}>
+          <Ionicons name={meta.icon} size={22} color={COLORS.groupAccent} />
         </View>
         <Text style={[styles.itemLabel, { color: "#ffffff" } as TextStyle]}>{meta.label}</Text>
       </View>
@@ -146,7 +105,7 @@ function ActionItem({ item, onAccept, onDecline }: {
 
       <View style={styles.actionRow}>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: C.groupAccent } as ViewStyle]}
+          style={[styles.actionBtn, { backgroundColor: COLORS.groupAccent } as ViewStyle]}
           onPress={() => onAccept(item.reference_id, item.notification_id)}
         >
           <Ionicons name="checkmark" size={16} color="#fff" />
@@ -175,10 +134,10 @@ function GenericItem({ item, onDelete }: {
   const isTip      = category === "tip";
   const isReminder = category === "reminder";
 
-  const bg          = isTip ? C.tipBg      : isReminder ? C.recBg      : C.otherBg;
-  const border      = isTip ? C.tipBorder  : isReminder ? C.recBorder  : C.otherBorder;
-  const badgeBg     = isTip ? C.tipBadgeBg : isReminder ? C.recBadgeBg : C.otherBadgeBg;
-  const accentColor = isTip ? C.tipAccent  : isReminder ? C.recAccent  : C.otherAccent;
+  const bg          = isTip ? COLORS.tipBg      : isReminder ? COLORS.recBg      : COLORS.otherBg;
+  const border      = isTip ? COLORS.tipBorder  : isReminder ? COLORS.recBorder  : COLORS.otherBorder;
+  const badgeBg     = isTip ? COLORS.tipBadgeBg : isReminder ? COLORS.recBadgeBg : COLORS.otherBadgeBg;
+  const accentColor = isTip ? COLORS.tipAccent  : isReminder ? COLORS.recAccent  : COLORS.otherAccent;
 
   const badgeVariant: "reminder" | "tip" | "other" =
     isReminder ? "reminder" : isTip ? "tip" : "other";
@@ -275,8 +234,6 @@ export default function NotificationsScreen() {
     }
   }, [notifications, markAllAsSeen]);
 
-  // DEBUG: anteponer debug a las del backend
-  // TODO: eliminar DEBUG_NOTIFICATIONS cuando el backend esté listo
   const allNotifications = [...notifications];
   const unreadCount      = allNotifications.filter((n) => !n.seen_at).length;
   const sections         = buildSections(allNotifications);
@@ -324,6 +281,18 @@ export default function NotificationsScreen() {
         >
           <Ionicons name="refresh-outline" size={22} color={COLORS.textPrimary} />
         </TouchableOpacity>
+        {__DEV__ && resetDebugNotifications && (
+          <TouchableOpacity
+            onPress={async () => {
+              await resetDebugNotifications();
+              await loadNotifications();
+            }}
+            style={styles.refreshBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="bug-outline" size={22} color="#f59e0b" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── Contenido ── */}
@@ -421,8 +390,8 @@ const styles = StyleSheet.create({
     padding:      16,
   },
   itemGroup: {
-    backgroundColor: C.groupBg,
-    borderColor:     C.groupBorder,
+    backgroundColor: COLORS.groupBg,
+    borderColor:     COLORS.groupBorder,
   },
   itemHeader: {
     flexDirection: "row",
@@ -445,7 +414,7 @@ const styles = StyleSheet.create({
   itemMessage: {
     fontSize:   16,
     lineHeight: 24,
-    color:      C.msgText,
+    color:      COLORS.msgText,
   },
   deleteBtn: { padding: 4 },
   // ── Tiempo + badge ──
@@ -457,7 +426,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    color:    C.msgText,
+    color:    COLORS.msgText,
   },
   newBadge: {
     paddingHorizontal: 10,
