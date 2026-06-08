@@ -6,9 +6,10 @@ type Props = {
   step: number;
   onNext: () => void;
   onRegister: () => void;
+  bottomInset: number;
 };
  
-export default function ContinueButton({ step, onNext, onRegister }: Props) {
+export default function ContinueButton({ step, onNext, onRegister, bottomInset }: Props) {
   const router = useRouter();
  
   const primary = APP_THEME.button.primary.background;
@@ -20,7 +21,7 @@ export default function ContinueButton({ step, onNext, onRegister }: Props) {
     <View
       style={[
         styles.footer,
-        { backgroundColor: background, borderColor: border },
+        { backgroundColor: background, borderColor: border, paddingBottom: bottomInset + 12 },
       ]}
     >
       <TouchableOpacity
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
   footer: {
     borderTopWidth: 1,
     padding: 12,
-    paddingBottom: 12,
     gap: 15,
   },
   navButton: {

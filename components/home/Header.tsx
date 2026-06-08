@@ -45,15 +45,17 @@ export default function Header({ userName = "Usuario" }) {
       </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.notificationBtn, { display: "flex", flexDirection: "row", alignItems: "center"}]}
+          style={styles.notificationBtn}
           onPress={() => router.push("/notifications")}
         >
-          <Text style={[{ color: APP_THEME.text.primary, backgroundColor: newNotificationsCount > 0 ? APP_THEME.button.primary.background : "#8b8f95", borderRadius: 10, width: 20, height: 20, textAlign: "center", alignSelf: "center" }]}>{newNotificationsCount}</Text>
-          <Ionicons
-            name="notifications-outline"
-            size={24}
-            color={APP_THEME.text.primary}
-          />
+          <View style={styles.notifIconWrapper}>
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={APP_THEME.text.primary}
+            />
+            {newNotificationsCount > 0 && (<View style={styles.notifDot} />)}
+          </View>
         </TouchableOpacity>
       </View>
   );
@@ -95,5 +97,19 @@ const styles = StyleSheet.create({
   },
   notificationBtn: {
     padding: 4,
+  },
+  notifIconWrapper: {
+    position: "relative",
+  },
+  notifDot: {
+    position:        "absolute",
+    top:             0,
+    right:           0,
+    width:           11,
+    height:          11,
+    borderRadius:    5,
+    backgroundColor: "#ff0000",
+    borderWidth:     1.5,
+    borderColor:     APP_THEME.card.border,
   },
 });
