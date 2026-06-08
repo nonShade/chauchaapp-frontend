@@ -10,6 +10,7 @@ import {
   Alert,
   ViewStyle,
   TextStyle,
+  Platform,
 } from "react-native";
 import { useEffect } from "react";
 import { useRouter, Stack } from "expo-router";
@@ -339,6 +340,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex:            1,
     backgroundColor: COLORS.bg,
+    paddingTop:      Platform.OS === "android" ? StatusBar.currentHeight ?? 24 : 0,
   },
   header: {
     flexDirection:     "row",
