@@ -127,6 +127,30 @@ export default function AprenderScreen() {
     <PlanningCard tip={item} onPress={() => setSelectedPlanningTip(item)} />
   );
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.screenTitle}>Aprender</Text>
+        <Text style={styles.screenSubtitle}>Educacion financiera con quizzes interactivos</Text>
+        <View style={styles.tabsWrapper}>
+          <ModulePlanningTabs value={activeTab} onChange={setActiveTab} />
+        </View>
+        <LearnModulesSkeleton />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadModules}>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   // Step rendering: list | detail | quiz
   if (step === 'detail' && selectedModuleSlug) {
     return (
@@ -193,15 +217,6 @@ export default function AprenderScreen() {
             showsVerticalScrollIndicator={false}
           />
         )
-      ) : loading ? (
-        <LearnModulesSkeleton />
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadModules}>
-            <Text style={styles.retryButtonText}>Reintentar</Text>
-          </TouchableOpacity>
-        </View>
       ) : modules.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No hay módulos disponibles por el momento.</Text>
