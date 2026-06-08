@@ -171,7 +171,6 @@ export default function AprenderScreen() {
         }}
         onQuizComplete={(percent: number) => {
           setQuizResultPercent(percent);
-          setStep('detail');
         }}
       />
     );
@@ -356,23 +355,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
+
   screenTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     marginBottom: 6,
   },
+
   screenSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 13,
+    fontSize: 16,
     marginBottom: 16,
   },
+
   tabsWrapper: {
     marginBottom: 18,
   },
+
   listContent: {
     paddingBottom: 24,
   },
+
   card: {
     backgroundColor: APP_THEME.card.background,
     borderRadius: 16,
@@ -386,6 +390,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+    width: '100%',
   },
 
   // Row 1: Difficulty, Time, Arrow
@@ -395,43 +400,51 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
+
   difficultyBadge: {
     backgroundColor: 'rgba(71, 214, 118, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
+
   difficultyText: {
     color: '#47D676',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
+
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
+
   timeText: {
     color: APP_THEME.text.secondary,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
   },
+
   arrow: {
     marginLeft: 'auto',
   },
 
   // Row 2: Title + Description
   row2: {
-    gap: 3,
+    gap: 4,
   },
+
   cardTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '700',
   },
+
   cardDescription: {
     color: APP_THEME.text.secondary,
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   // Row 3: Topics + Questions
@@ -439,23 +452,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+
   topicsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
+
   topicsText: {
     color: APP_THEME.text.secondary,
-    fontSize: 12,
+    fontSize: 14,
   },
+
   questionsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
+
   questionsText: {
     color: '#3FD364',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
 
@@ -466,32 +483,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
+
   errorText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: 14,
   },
+
   retryButton: {
     backgroundColor: APP_THEME.button.primary.background,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
+
   retryButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   emptyText: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: 18,
   },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -501,6 +524,7 @@ const styles = StyleSheet.create({
     paddingTop: 64,
     paddingBottom: 96,
   },
+
   modalCard: {
     backgroundColor: APP_THEME.background.primary,
     borderRadius: 28,
@@ -510,22 +534,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: APP_THEME.card.border,
   },
+
   modalBody: {
     paddingHorizontal: 20,
     paddingTop: 20,
     maxHeight: '78%',
   },
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   modalBadgeWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+
   modalIconWrap: {
     width: 34,
     height: 34,
@@ -533,50 +561,60 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   modalBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
   },
+
   modalBadgeText: {
     color: APP_THEME.text.primary,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '700',
   },
+
   modalCloseButton: {
     padding: 6,
   },
+
   modalTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     marginBottom: 8,
   },
+
   modalDescription: {
     color: APP_THEME.text.secondary,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 18,
+    lineHeight: 26,
     marginBottom: 20,
   },
+
   sectionBlock: {
     marginBottom: 18,
     gap: 10,
   },
+
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
+
   sectionTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: '700',
   },
+
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+
   numberBadge: {
     width: 24,
     height: 24,
@@ -585,37 +623,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   numberBadgeText: {
     color: '#2FE08F',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
   },
+
   listText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 18,
+    lineHeight: 24,
     flex: 1,
   },
+
   resourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 8,
   },
+
   resourceText: {
     color: APP_THEME.text.primary,
-    fontSize: 14,
+    fontSize: 18,
     flex: 1,
     marginRight: 8,
   },
+
   modalActionButton: {
     backgroundColor: APP_THEME.button.primary.background,
     paddingVertical: 16,
     alignItems: 'center',
   },
+
   modalActionText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
 });
