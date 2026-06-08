@@ -336,6 +336,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginBottom: 16,
+    backgroundColor: "black",
+    borderRadius: 50,
   },
   appName: {
     fontSize: 28,

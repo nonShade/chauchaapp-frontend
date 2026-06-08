@@ -374,11 +374,7 @@ export default function PerfilScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Cargando...</Text>
-      </View>
-    );
+    return <ProfileSkeleton />;
   }
 
   const initials = userProfile
