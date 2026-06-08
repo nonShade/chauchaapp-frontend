@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput, Modal, Pressable, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -267,10 +267,14 @@ export default function PerfilScreen() {
     if (!accessToken) {
       // If no token, still clear and redirect
       try {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
         await SecureStore.deleteItemAsync('user').catch(() => {});
         await SecureStore.deleteItemAsync('token').catch(() => {});
+      } catch (e) {
+        console.error('Error limpiando datos locales:', e);
       } finally {
         router.replace('/login');
       }
@@ -284,8 +288,10 @@ export default function PerfilScreen() {
       }
 
       // Clear local storage and secure store regardless of endpoint result
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
       await SecureStore.deleteItemAsync('user').catch(() => {});
       await SecureStore.deleteItemAsync('token').catch(() => {});
 
@@ -294,10 +300,14 @@ export default function PerfilScreen() {
       console.error('Error al cerrar sesión:', error);
       // Best-effort: clear local tokens and redirect
       try {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
         await SecureStore.deleteItemAsync('user').catch(() => {});
         await SecureStore.deleteItemAsync('token').catch(() => {});
+      } catch (e) {
+        console.error('Error limpiando datos locales:', e);
       } finally {
         router.replace('/login');
       }
@@ -374,7 +384,11 @@ export default function PerfilScreen() {
   };
 
   if (loading) {
-    return <ProfileSkeleton />;
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
+      </View>
+    );
   }
 
   const initials = userProfile
