@@ -32,7 +32,7 @@ import ContinueButton from "@/components/register/ContinueButton";
 import StepOne       from "@/components/register/StepOne";
 import StepTwo       from "@/components/register/StepTwo";
 import StepThree     from "@/components/register/StepThree";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 
 /* ─── Vista principal ────────────────────────────────────────────────────────── */
 
@@ -225,98 +225,100 @@ export default function RegisterScreen() {
   const firstError = getFirstError();
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: background }]}
-    >
-      {/* Barra superior */}
-      <View style={[styles.topNavbar,{ paddingTop: insets.top+12, },]}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={[styles.backButton, { backgroundColor: border }]}
-        >
-          <FontAwesome name="angle-left" color={foreground} size={32} />
-        </TouchableOpacity>
-
-        <ProgressBar step={step} />
-      </View>
-
-      {/* Contenido scrolleable */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={true}
+    <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={[styles.container, { backgroundColor: background }]}
       >
-        <View>
-          <Text style={[styles.position, { color: primary }]}>
-            Paso {step} de 3
-          </Text>
-          <Text style={[styles.title, { color: foreground }]}>
-            {STEP_TITLES[step]}
-          </Text>
-          <Text style={[styles.subtitle, { color: mutedForeground }]}>
-            {STEP_SUBTITLES[step]}
-          </Text>
+        {/* Barra superior */}
+        <View style={[styles.topNavbar,{ paddingTop: 12 },]}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={[styles.backButton, { backgroundColor: border }]}
+          >
+            <FontAwesome name="angle-left" color={foreground} size={32} />
+          </TouchableOpacity>
+
+          <ProgressBar step={step} />
         </View>
 
-        <View style={[styles.formCard, { backgroundColor: background }]}>
-          {/* Banner de error */}
-          {firstError !== "" && (
-            <View
-              style={[
-                styles.errorBanner,
-                { backgroundColor: APP_THEME.status.error + "15" },
-              ]}
-            >
-              <Ionicons
-                name="alert-circle-outline"
-                size={24}
-                color={APP_THEME.status.error}
+        {/* Contenido scrolleable */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+        >
+          <View>
+            <Text style={[styles.position, { color: primary }]}>
+              Paso {step} de 3
+            </Text>
+            <Text style={[styles.title, { color: foreground }]}>
+              {STEP_TITLES[step]}
+            </Text>
+            <Text style={[styles.subtitle, { color: mutedForeground }]}>
+              {STEP_SUBTITLES[step]}
+            </Text>
+          </View>
+
+          <View style={[styles.formCard, { backgroundColor: background }]}>
+            {/* Banner de error */}
+            {firstError !== "" && (
+              <View
+                style={[
+                  styles.errorBanner,
+                  { backgroundColor: APP_THEME.status.error + "15" },
+                ]}
+              >
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={24}
+                  color={APP_THEME.status.error}
+                />
+                <Text style={[styles.errorText, { color: APP_THEME.status.error }]}>
+                  {firstError}
+                </Text>
+              </View>
+            )}
+
+            {/* Pasos */}
+            {step === 1 && (
+              <StepOne
+                formData={formData}
+                errors={errors}
+                updateField={updateField}
+                validateField={validateField}
+                onSubmit={handleNext}
+                onEmailTakenChange={setEmailTaken}
               />
-              <Text style={[styles.errorText, { color: APP_THEME.status.error }]}>
-                {firstError}
-              </Text>
-            </View>
-          )}
+            )}
+            {step === 2 && (
+              <StepTwo
+                formData={formData}
+                errors={errors}
+                incomeTypes={incomeTypes}
+                updateField={updateField}
+                validateField={validateField}
+              />
+            )}
+            {step === 3 && (
+              <StepThree
+                formData={formData}
+                categoryMap={categoryMap}
+                toggleCategory={toggleCategory}
+              />
+            )}
+          </View>
+        </ScrollView>
 
-          {/* Pasos */}
-          {step === 1 && (
-            <StepOne
-              formData={formData}
-              errors={errors}
-              updateField={updateField}
-              validateField={validateField}
-              onSubmit={handleNext}
-              onEmailTakenChange={setEmailTaken}
-            />
-          )}
-          {step === 2 && (
-            <StepTwo
-              formData={formData}
-              errors={errors}
-              incomeTypes={incomeTypes}
-              updateField={updateField}
-              validateField={validateField}
-            />
-          )}
-          {step === 3 && (
-            <StepThree
-              formData={formData}
-              categoryMap={categoryMap}
-              toggleCategory={toggleCategory}
-            />
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Barra inferior */}
-      <ContinueButton
-        step={step}
-        onNext={handleNext}
-        onRegister={handleRegister}
-        bottomInset={insets.bottom}
-      />
-    </KeyboardAvoidingView>
+        {/* Barra inferior */}
+        <ContinueButton
+          step={step}
+          onNext={handleNext}
+          onRegister={handleRegister}
+          bottomInset={Math.max(insets.bottom, 16)} 
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
