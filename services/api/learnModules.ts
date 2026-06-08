@@ -45,6 +45,16 @@ export const getLearnModules = async (): Promise<LearnModule[]> => {
   return response.data.modules || [];
 };
 
+export const generateLearnModules = async (): Promise<void> => {
+  await apiClient.post('/education/modules/generate', {
+    items: [
+      { topic: 'tasas', level: 'Principiante' },
+      { topic: 'creditos', level: 'Intermedio' },
+      { topic: 'fondos mutuos', level: 'Avanzado' },
+    ],
+  });
+};
+
 export const getLearnModuleDetail = async (moduleId: string): Promise<LearnModuleDetailResponse> => {
   const userId = await getUserIdFromStorage();
   const response = await apiClient.get(`/education/modules/${moduleId}`, {

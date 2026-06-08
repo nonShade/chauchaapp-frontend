@@ -15,13 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { LearnDetailView } from '../learn-detail';
 import LearnQuizStep from '../learn-quiz';
 import { APP_THEME } from '@/constants/themes';
-import { getLearnModules } from '@/services/api/learnModules';
+import { getLearnModules, generateLearnModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
 import PlanningCard from '@/components/learn/PlanningCard';
 import { LearnModulesSkeleton } from '@/components/learn/LearnModulesSkeleton';
 import { PlanningSkeleton } from '@/components/learn/PlanningSkeleton';
-import { getFinancialPlanningTips } from '@/services/api/financialPlanning';
+import { getFinancialPlanningTips, generateFinancialPlanning } from '@/services/api/financialPlanning';
 import { FinancialPlanningTip } from '@/types/planningTypes';
 
 export default function AprenderScreen() {
@@ -46,7 +46,11 @@ export default function AprenderScreen() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getLearnModules();
+      let data = await getLearnModules();
+      if (!data || data.length === 0) {
+        await generateLearnModules();
+        data = await getLearnModules();
+      }
       setModules(data);
     } catch (err) {
       console.error('Error cargando módulos:', err);
@@ -60,7 +64,11 @@ export default function AprenderScreen() {
     try {
       setPlanningLoading(true);
       setPlanningError(null);
-      const data = await getFinancialPlanningTips();
+      let data = await getFinancialPlanningTips();
+      if (!data || data.length === 0) {
+        await generateFinancialPlanning();
+        data = await getFinancialPlanningTips();
+      }
       setPlanningTips(data);
     } catch (err) {
       console.error('Error cargando planificacion:', err);
