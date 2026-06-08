@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, DimensionValue } from 'react-native';
 import { APP_THEME } from '@/constants/themes';
 import { SkeletonPulse } from '@/components/learn/SkeletonPulse';
 
-function SkeletonLine({ width, height }: { width: string | number; height: number }) {
+function SkeletonLine({ width, height }: { width: DimensionValue; height: number }) {
   return <View style={[styles.line, { width, height }]} />;
 }
 
