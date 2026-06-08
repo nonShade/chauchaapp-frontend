@@ -2,7 +2,7 @@
   "expo": {
     "name": "ChauchaApp",
     "slug": "chauchaapp-frontend",
-    "owner": "nonshade",
+    "owner": "tito1",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -42,9 +42,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "eas": {
-        "projectId": "3e9b782e-22b5-4afe-b22f-9dadb4d262a8"
-      }
+      "eas": {}
     }
   }
 }
