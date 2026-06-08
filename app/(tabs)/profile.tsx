@@ -5,6 +5,7 @@ import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { APP_THEME } from '@/constants/themes';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
 import { getIncomeTypes, getUserProfile, updateUserProfile, getNewsTopics, logoutUser, calculateAge, formatCLP, IncomeTypeOption, TopicOption, UserProfile as ApiUserProfile } from '@/services/api/userProfile';
 import { familyGroupService } from '@/services/api/familyGroup';
 import { FamilyGroup } from '@/types/family';
