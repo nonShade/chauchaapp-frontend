@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -111,11 +112,12 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: LOGIN_COLORS.background }]}
-    >
-      <ScrollView
+    <SafeAreaView style={{ flex: 1, backgroundColor: LOGIN_COLORS.background }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={[styles.container, { backgroundColor: LOGIN_COLORS.background }]}
+      >
+        <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -311,6 +313,7 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
