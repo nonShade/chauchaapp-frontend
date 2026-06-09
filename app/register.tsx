@@ -76,9 +76,23 @@ export default function RegisterScreen() {
           getIncomeTypes(),
           getNewsTopics(),
         ]);
-        setIncomeTypes(incomeTypesData);
-        if (incomeTypesData.length > 0) {
-          updateField("incomeType", incomeTypesData[0].id);
+        
+        const filteredIncomeTypes = incomeTypesData
+          .filter(t => {
+            const nameLower = t.name.toLowerCase();
+            return nameLower.includes('sueldo fijo') || nameLower.includes('freelance') || nameLower.includes('independiente');
+          })
+          .map(t => {
+            const nameLower = t.name.toLowerCase();
+            if (nameLower.includes('freelance') || nameLower.includes('independiente')) {
+              return { ...t, name: 'Independiente' };
+            }
+            return { ...t, name: 'Sueldo fijo' };
+          });
+
+        setIncomeTypes(filteredIncomeTypes);
+        if (filteredIncomeTypes.length > 0) {
+          updateField("incomeType", filteredIncomeTypes[0].id);
         }
         setCategoryMap(categoriesData);
       } catch (err) {

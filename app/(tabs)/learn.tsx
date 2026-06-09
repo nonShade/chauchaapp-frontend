@@ -216,11 +216,15 @@ export default function AprenderScreen() {
         />
       )}
       <Modal visible={!!selectedPlanningTip} animationType="fade" transparent statusBarTranslucent>
-        <TouchableWithoutFeedback onPress={() => setSelectedPlanningTip(null)}>
-          <View style={styles.modalOverlay}>
-            <Pressable style={styles.modalCard} onPress={() => {}}>
-              {selectedPlanningTip && (
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={() => setSelectedPlanningTip(null)} 
+          />
+          <View style={styles.modalCard}>
+            {selectedPlanningTip && (
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHeader}>
                     <View style={styles.modalBadgeWrapper}>
                       <View style={[styles.modalIconWrap, { backgroundColor: modalCategoryStyle.iconBg }]}>
@@ -302,9 +306,8 @@ export default function AprenderScreen() {
               >
                 <Text style={styles.modalActionText}>Entendido</Text>
               </TouchableOpacity>
-            </Pressable>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
     </View>
   );
