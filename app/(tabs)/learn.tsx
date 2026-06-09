@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LearnDetailView } from '../learn-detail';
 import LearnQuizStep from '../learn-quiz';
 import { APP_THEME } from '@/constants/themes';
-import { getLearnModules, generateLearnModules } from '@/services/api/learnModules';
+import { getLearnModules, generateAndWaitForModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
 import PlanningCard from '@/components/learn/PlanningCard';
 import { LearnModulesSkeleton } from '@/components/learn/LearnModulesSkeleton';
 import { PlanningSkeleton } from '@/components/learn/PlanningSkeleton';
-import { getFinancialPlanningTips, generateFinancialPlanning } from '@/services/api/financialPlanning';
+import { getFinancialPlanningTips, generateAndWaitForFinancialPlanning } from '@/services/api/financialPlanning';
 import { FinancialPlanningTip } from '@/types/planningTypes';
 
 export default function AprenderScreen() {
+  const mounted = useRef(true);
   const [modules, setModules] = useState<LearnModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,22 +41,38 @@ export default function AprenderScreen() {
   useEffect(() => {
     loadModules();
     loadPlanningTips();
+    return () => { mounted.current = false; };
   }, []);
 
   async function loadModules() {
     try {
       setLoading(true);
       setError(null);
-      let data = await getLearnModules();
-      if (!data || data.length === 0) {
-        await generateLearnModules();
-        data = await getLearnModules();
+
+      const existing = await getLearnModules();
+      if (!mounted.current) return;
+
+      if (existing.length > 0) {
+        setModules(existing);
+        setLoading(false);
+
+        generateAndWaitForModules()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setModules(fresh);
+          })
+          .catch((err) =>
+            console.error('Background modules refresh failed:', err)
+          );
+      } else {
+        const data = await generateAndWaitForModules();
+        if (!mounted.current) return;
+        setModules(data);
+        setLoading(false);
       }
-      setModules(data);
     } catch (err) {
       console.error('Error cargando módulos:', err);
+      if (!mounted.current) return;
       setError('No se pudieron cargar los módulos. Intenta de nuevo más tarde.');
-    } finally {
       setLoading(false);
     }
   }
@@ -64,16 +81,31 @@ export default function AprenderScreen() {
     try {
       setPlanningLoading(true);
       setPlanningError(null);
-      let data = await getFinancialPlanningTips();
-      if (!data || data.length === 0) {
-        await generateFinancialPlanning();
-        data = await getFinancialPlanningTips();
+
+      const existing = await getFinancialPlanningTips();
+      if (!mounted.current) return;
+
+      if (existing.length > 0) {
+        setPlanningTips(existing);
+        setPlanningLoading(false);
+
+        generateAndWaitForFinancialPlanning()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setPlanningTips(fresh);
+          })
+          .catch((err) =>
+            console.error('Background planning refresh failed:', err)
+          );
+      } else {
+        const data = await generateAndWaitForFinancialPlanning();
+        if (!mounted.current) return;
+        setPlanningTips(data);
+        setPlanningLoading(false);
       }
-      setPlanningTips(data);
     } catch (err) {
       console.error('Error cargando planificacion:', err);
+      if (!mounted.current) return;
       setPlanningError('No se pudo cargar la planificación. Intenta de nuevo más tarde.');
-    } finally {
       setPlanningLoading(false);
     }
   }
