@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -12,6 +12,8 @@ import { useCartolaData } from '@/hooks/useCartolaData';
 import { deleteTransaction } from '@/services/api/transactions';
 import { useGroupData } from '@/hooks/useGroupData';
 import GroupEmptyState from '@/components/cartola/group/GroupEmptyState';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tipsService, DailyTip } from '@/services/api/tips';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CL', {
@@ -31,6 +33,50 @@ export default function CartolaScreen() {
   const expense = summary?.total_expenses || 0;
   const balance = summary?.total_balance || 0;
   const savings = income * 0.2;
+  const [dailyTip, setDailyTip] = useState<DailyTip | null>(null);
+
+  useEffect(() => {
+    const loadDailyTip = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const storageKey = 'wallet_daily_tip';
+
+        const storedData = await AsyncStorage.getItem(storageKey);
+
+        if (storedData) {
+          const { date, tip } = JSON.parse(storedData);
+
+          if (date === today) {
+            setDailyTip(tip);
+            return;
+          }
+        }
+
+        const tips = await tipsService.getAllTips();
+
+        if (tips.length === 0) {
+          console.error('No se encontraron tips en la base de datos disponible');
+          return;
+        }
+
+        const randomTip = tips[Math.floor(Math.random() * tips.length)];
+
+        await AsyncStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            date: today,
+            tip: randomTip,
+          })
+        );
+
+        setDailyTip(randomTip);
+      } catch (error) {
+        console.error('Error loading daily tip:', error);
+      }
+    };
+
+    loadDailyTip();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -240,16 +286,13 @@ export default function CartolaScreen() {
                 <Ionicons name="bulb-outline" size={20} color={APP_THEME.cards.tip.accent} />
               </View>
               <View style={styles.tipTextContainer}>
-                <Text style={styles.tipTitle}>Recomendacion de ahorro</Text>
-                {activeTab === 'group' ? (
-                  <Text style={styles.tipDescription}>
-                    Sin informacion por mientras
-                  </Text>
-                ) : (
-                  <Text style={styles.tipDescription}>
-                    Segun la regla 50/30/20, deberias ahorrar <Text style={{ color: APP_THEME.cards.tip.accent, fontWeight: 'bold' }}>{isLoading ? '...' : formatCurrency(savings)}</Text> este mes (20% de tus ingresos).
-                  </Text>
-                )}
+                <Text style={styles.tipTitle}>
+                  {dailyTip?.title ?? 'Consejo del día'}
+                </Text>
+
+                <Text style={styles.tipDescription}>
+                  {dailyTip?.text ?? 'Cargando recomendación...'}
+                </Text>
               </View>
             </View>
           </>
