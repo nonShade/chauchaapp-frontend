@@ -11,7 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { APP_THEME } from '@/constants/themes';
+import { APP_THEME, Typography } from '@/constants/themes';
 import {
   getLearnModuleDetail,
   submitQuizAttempt,
@@ -273,7 +273,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
           onReviewModule={() => onBack && onBack()}
           onContinue={() => onReturnToModules && onReturnToModules()}
         />
-      ) : (
+      ) : currentQuestion ? (
         <View style={styles.quizBody}>
           <View style={styles.questionCard}>
             <Text style={styles.questionText}>{currentQuestion.question}</Text>
@@ -358,13 +358,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
     marginTop: 12,
   },
   headerSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
     marginTop: 4,
   },
   backButton: {
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '600',
   },
   headerColumn: {
@@ -389,18 +389,18 @@ const styles = StyleSheet.create({
   },
   questionCounter: {
     color: APP_THEME.text.primary,
-    fontSize: 14,
+    fontSize: Typography.base,
     fontWeight: '700',
   },
   difficultyBadgeSmall: {
-    backgroundColor: 'rgba(71, 214, 118, 0.15)',
+    backgroundColor: APP_THEME.status.difficultyBadgeBg,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   difficultyTextSmall: {
-    color: '#47D676',
-    fontSize: 12,
+    color: APP_THEME.status.successAlt,
+    fontSize: Typography.sm,
     fontWeight: '600',
   },
   quizProgressBarWrapper: {
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   },
   quizHeaderSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
   feedbackCard: {
     backgroundColor: APP_THEME.card.background,
@@ -420,12 +420,12 @@ const styles = StyleSheet.create({
   },
   feedbackTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 14,
+    fontSize: Typography.base,
     fontWeight: '700',
   },
   feedbackText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
     lineHeight: 20,
   },
   feedbackSourceRow: {
@@ -436,10 +436,10 @@ const styles = StyleSheet.create({
   },
   feedbackSourceText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
   resultBanner: {
-    backgroundColor: '#20A353',
+    backgroundColor: APP_THEME.status.quizBannerBg,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -447,12 +447,12 @@ const styles = StyleSheet.create({
   },
   resultBannerTitle: {
     color: '#000',
-    fontSize: 20,
+    fontSize: Typography.lg,
     fontWeight: '700',
   },
   resultBannerSubtitle: {
     color: '#000',
-    fontSize: 14,
+    fontSize: Typography.base,
   },
   resultFeedbackSection: {
     backgroundColor: APP_THEME.card.background,
@@ -462,19 +462,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   resultScore: {
-    fontSize: 48,
+    fontSize: Typography.display,
     fontWeight: '800',
   },
   resultScoreSuccess: {
-    color: '#3FD364',
+    color: APP_THEME.status.successBright,
   },
   resultScoreDetail: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   resultMessage: {
     color: APP_THEME.text.secondary,
-    fontSize: 15,
+    fontSize: Typography.label,
   },
   resultAnswersList: {
     gap: 12,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   correctIcon: {
-    backgroundColor: '#3FD364',
+    backgroundColor: APP_THEME.status.successBright,
   },
   progressTrack: {
     height: 8,
@@ -512,11 +512,11 @@ const styles = StyleSheet.create({
     backgroundColor: APP_THEME.button.primary.background,
   },
   incorrectIcon: {
-    backgroundColor: '#FF453A',
+    backgroundColor: APP_THEME.status.danger,
   },
   resultAnswerTextRow: {
     color: APP_THEME.text.primary,
-    fontSize: 14,
+    fontSize: Typography.base,
     flex: 1,
   },
   resultActions: {
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
   },
   secondaryButton: {
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
   },
   loaderContainer: {
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   loaderText: {
     marginTop: 12,
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   errorContainer: {
     flex: 1,
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
   questionCard: {
     backgroundColor: APP_THEME.card.background,
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   },
   questionText: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -605,20 +605,20 @@ const styles = StyleSheet.create({
     backgroundColor: APP_THEME.background.primary,
   },
   optionSelected: {
-    borderColor: '#3FD364',
-    backgroundColor: '#111714',
+    borderColor: APP_THEME.status.successBright,
+    backgroundColor: APP_THEME.card.optionCorrectBg,
   },
   optionCorrect: {
-    borderColor: '#3FD364',
-    backgroundColor: '#111714',
+    borderColor: APP_THEME.status.successBright,
+    backgroundColor: APP_THEME.card.optionCorrectBg,
   },
   optionWrong: {
-    borderColor: '#FF453A',
-    backgroundColor: '#111714',
+    borderColor: APP_THEME.status.danger,
+    backgroundColor: APP_THEME.card.optionWrongBg,
   },
   optionLabelRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
   },
   optionLabel: {
@@ -628,8 +628,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#1A1E24',
-    backgroundColor: '#1A1E24',
+    borderColor: APP_THEME.input.optionLabelBg,
+    backgroundColor: APP_THEME.input.optionLabelBg,
+    flexShrink: 0,
+    marginTop: 1,
   },
   optionLetterLabel: {
     paddingHorizontal: 0,
@@ -639,19 +641,19 @@ const styles = StyleSheet.create({
     height: 34,
   },
   optionLabelSelected: {
-    borderColor: '#3FD364',
-    backgroundColor: '#3FD364',
+    borderColor: APP_THEME.status.successBright,
+    backgroundColor: APP_THEME.status.successBright,
   },
   optionLabelCorrect: {
-    borderColor: '#3FD364',
-    backgroundColor: '#3FD364',
+    borderColor: APP_THEME.status.successBright,
+    backgroundColor: APP_THEME.status.successBright,
   },
   optionLabelWrong: {
-    borderColor: '#FF453A',
-    backgroundColor: '#FF453A',
+    borderColor: APP_THEME.status.danger,
+    backgroundColor: APP_THEME.status.danger,
   },
   optionLetter: {
-    color: '#93979F',
+    color: APP_THEME.text.optionLetter,
     fontWeight: '700',
   },
   optionLetterSelected: {
@@ -660,7 +662,8 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
+    flex: 1,
   },
   optionTextSelected: {
     color: APP_THEME.text.primary,
@@ -677,7 +680,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
   },
   resultContainer: {
@@ -688,12 +691,12 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 22,
+    fontSize: Typography.title,
     fontWeight: '700',
   },
   resultSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   resultStats: {
     gap: 8,
@@ -703,7 +706,7 @@ const styles = StyleSheet.create({
   },
   resultStatText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   resultList: {
     gap: 12,
@@ -718,24 +721,24 @@ const styles = StyleSheet.create({
   },
   resultQuestionText: {
     color: APP_THEME.text.primary,
-    fontSize: 15,
+    fontSize: Typography.label,
     fontWeight: '700',
     marginBottom: 8,
   },
   resultAnswerText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
     marginBottom: 4,
   },
   resultStatus: {
-    fontSize: 14,
+    fontSize: Typography.base,
     fontWeight: '600',
   },
   correct: {
-    color: '#3FD364',
+    color: APP_THEME.status.successBright,
   },
   incorrect: {
-    color: '#FF453A',
+    color: APP_THEME.status.danger,
   },
   finishButton: {
     backgroundColor: APP_THEME.button.primary.background,
@@ -746,7 +749,7 @@ const styles = StyleSheet.create({
   },
   finishButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
   },
 });
