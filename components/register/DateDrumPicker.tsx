@@ -9,7 +9,7 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -64,7 +64,10 @@ function DrumColumn({ items, selectedIndex, onSelect, formatItem, width }: DrumC
   useEffect(() => {
     if (lastIndex.current !== selectedIndex) {
       lastIndex.current = selectedIndex;
-      scrollRef.current?.scrollTo({ y: selectedIndex * ITEM_HEIGHT, animated: true });
+      // Pequeño delay para no chocar con gestos en curso
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: selectedIndex * ITEM_HEIGHT, animated: true });
+      }, 50);
     }
   }, [selectedIndex]);
 
@@ -72,9 +75,14 @@ function DrumColumn({ items, selectedIndex, onSelect, formatItem, width }: DrumC
   const snapToIndex = useCallback((y: number) => {
     const index   = Math.round(y / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(index, items.length - 1));
-    lastIndex.current = clamped;
-    scrollRef.current?.scrollTo({ y: clamped * ITEM_HEIGHT, animated: true });
-    onSelect(clamped);
+    if (clamped !== lastIndex.current) {
+      lastIndex.current = clamped;
+      onSelect(clamped);
+    }
+    // Siempre forzar la posición correcta, incluso si el índice no cambió
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ y: clamped * ITEM_HEIGHT, animated: true });
+    }, 10);
   }, [items.length, onSelect]);
 
   const handleMomentumEnd = useCallback(
@@ -133,13 +141,17 @@ function DrumColumn({ items, selectedIndex, onSelect, formatItem, width }: DrumC
   } : {};
 
   return (
-    <View style={[styles.columnWrapper, { width }]} {...webHandlers}>
+    <View
+      style={[styles.columnWrapper, { width }]}
+        {...webHandlers}
+    >
       <ScrollView
         ref={scrollRef}
         nestedScrollEnabled={true}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
-        decelerationRate="fast"
+        decelerationRate={Platform.OS === "android" ? 0.85 : "fast"}
+        disableIntervalMomentum={true} 
         onMomentumScrollBegin={() => { isMomentum.current = true; }}
         onMomentumScrollEnd={handleMomentumEnd}
         onScrollEndDrag={handleScrollEndDrag}

@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 import { FormData, FormErrors } from "@/types/registerForm";
 import {
   MIN_AGE,
@@ -108,6 +108,10 @@ export default function RegisterScreen() {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   const validateField = (field: keyof FormData, value: any): boolean => {
+    if(field === "spentAmount" && value.trim() === "") {
+      updateField("spentAmount", "0");
+      value = "0";
+    }
     const error = validateFormField(field, value, formData);
     setErrors((prev) => ({ ...prev, [field]: error }));
     return error === "";
@@ -362,15 +366,15 @@ const styles = StyleSheet.create({
   },
   position: {
     fontWeight: "500",
-    fontSize:   14,
+    fontSize:   Typography.base,
   },
   title: {
-    fontSize:     24,
+    fontSize:     Typography.xl,
     fontWeight:   "700",
     marginBottom: 4,
   },
   subtitle: {
-    fontSize:     14,
+    fontSize:     Typography.base,
     marginBottom: 16,
   },
   formCard: {
@@ -387,6 +391,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     flex:     1,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
 });
