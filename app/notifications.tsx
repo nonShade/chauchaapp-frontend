@@ -20,15 +20,15 @@ import { Notification } from "@/types/notification";
 import {
   getMeta,
   getCategory,
-  NOTIFICATION_COLORS,
 } from "@/constants/notificationConfig";
+import { APP_THEME, Typography } from "@/constants/themes";
 
 const resetDebugNotifications: (() => Promise<void>) | null = __DEV__
   ? require("@/hooks/useNotification.dev").resetDebugNotifications
   : null;
 
 // ─── Paleta de colores ────────────────────────────────────────────────────────
-const COLORS = NOTIFICATION_COLORS;
+const COLORS = APP_THEME.notifications;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function daysAgo(iso: string): string {
@@ -60,10 +60,10 @@ function TimeRow({ item, isNew, badgeVariant }: {
   isNew:        boolean;
   badgeVariant: "group" | "reminder" | "tip" | "other";
 }) {
-  const badgeBg   = badgeVariant === "reminder" ? COLORS.recBadgeBg
+  const badgeBg   = badgeVariant === "reminder" ? COLORS.reminderBadgeBg
                   : badgeVariant === "tip"       ? COLORS.tipBadgeBg
                   : COLORS.newBadgeBg;
-  const badgeTxt  = badgeVariant === "reminder" ? COLORS.recAccent
+  const badgeTxt  = badgeVariant === "reminder" ? COLORS.reminderAccent
                   : badgeVariant === "tip"       ? COLORS.tipAccent
                   : COLORS.newBadgeText;
   return (
@@ -116,8 +116,8 @@ function ActionItem({ item, onAccept, onDecline }: {
           style={[styles.actionBtn, styles.declineBtn]}
           onPress={() => onDecline(item.reference_id, item.notification_id)}
         >
-          <Ionicons name="close" size={16} color="#94a3b8" />
-          <Text style={[styles.actionBtnText, { color: "#94a3b8" } as TextStyle]}>No me interesa</Text>
+          <Ionicons name="close" size={16} color={APP_THEME.notifications.mutedText} />
+          <Text style={[styles.actionBtnText, { color: APP_THEME.notifications.mutedText } as TextStyle]}>No me interesa</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -135,10 +135,10 @@ function GenericItem({ item, onDelete }: {
   const isTip      = category === "tip";
   const isReminder = category === "reminder";
 
-  const bg          = isTip ? COLORS.tipBg      : isReminder ? COLORS.recBg      : COLORS.otherBg;
-  const border      = isTip ? COLORS.tipBorder  : isReminder ? COLORS.recBorder  : COLORS.otherBorder;
-  const badgeBg     = isTip ? COLORS.tipBadgeBg : isReminder ? COLORS.recBadgeBg : COLORS.otherBadgeBg;
-  const accentColor = isTip ? COLORS.tipAccent  : isReminder ? COLORS.recAccent  : COLORS.otherAccent;
+  const bg          = isTip ? COLORS.tipBg      : isReminder ? COLORS.reminderBg      : COLORS.otherBg;
+  const border      = isTip ? COLORS.tipBorder  : isReminder ? COLORS.reminderBorder  : COLORS.otherBorder;
+  const badgeBg     = isTip ? COLORS.tipBadgeBg : isReminder ? COLORS.reminderBadgeBg : COLORS.otherBadgeBg;
+  const accentColor = isTip ? COLORS.tipAccent  : isReminder ? COLORS.reminderAccent  : COLORS.otherAccent;
 
   const badgeVariant: "reminder" | "tip" | "other" =
     isReminder ? "reminder" : isTip ? "tip" : "other";
@@ -161,7 +161,7 @@ function GenericItem({ item, onDelete }: {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={styles.deleteBtn}
         >
-          <Ionicons name="close" size={18} color="#94a3b8" />
+          <Ionicons name="close" size={18} color={APP_THEME.notifications.mutedText} />
         </TouchableOpacity>
       </View>
 
@@ -256,7 +256,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -303,7 +303,7 @@ export default function NotificationsScreen() {
 
       {!loading && !!error && (
         <View style={styles.centered}>
-          <Ionicons name="warning-outline" size={44} color="#ef4444" />
+          <Ionicons name="warning-outline" size={44} color={APP_THEME.notifications.errorColor} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadNotifications}>
             <Text style={styles.retryBtnText}>Reintentar</Text>
@@ -313,7 +313,7 @@ export default function NotificationsScreen() {
 
       {!loading && !error && sections.length === 0 && (
         <View style={styles.centered}>
-          <Ionicons name="notifications-off-outline" size={52} color="#475569" />
+          <Ionicons name="notifications-off-outline" size={52} color={APP_THEME.notifications.emptyIcon} />
           <Text style={styles.emptyText}>Sin notificaciones nuevas</Text>
         </View>
       )}
@@ -339,7 +339,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex:            1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: COLORS.background,
     paddingTop:      Platform.OS === "android" ? StatusBar.currentHeight ?? 24 : 0,
   },
   header: {
@@ -358,14 +358,14 @@ const styles = StyleSheet.create({
     gap:  3,
   },
   headerTitle: {
-    fontSize:   24,
+    fontSize:   Typography.xl,
     fontWeight: "700",
     color:      COLORS.textPrimary,
     textAlign:  "left",
   },
   headerUnread: {
-    fontSize:  16,
-    color:     COLORS.textSecond,
+    fontSize:  Typography.md,
+    color:     COLORS.textSecondary,
     textAlign: "left",
   },
   // ── Secciones ──
@@ -379,10 +379,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   sectionTitle: {
-    fontSize:      15,
+    fontSize:      Typography.label,
     fontWeight:    "700",
     letterSpacing: 0.8,
-    color:         COLORS.textSecond,
+    color:         COLORS.textSecondary,
     textTransform: "uppercase",
   },
   // ── Ítem base ──
@@ -410,13 +410,13 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     flex:       1,
-    fontSize:   17,
+    fontSize:   Typography.subhead,
     fontWeight: "600",
   },
   itemMessage: {
-    fontSize:   16,
+    fontSize:   Typography.md,
     lineHeight: 24,
-    color:      COLORS.msgText,
+    color:      COLORS.messageText,
   },
   deleteBtn: { padding: 4 },
   // ── Tiempo + badge ──
@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
     marginTop:     10,
   },
   timeText: {
-    fontSize: 14,
-    color:    COLORS.msgText,
+    fontSize: Typography.base,
+    color:    COLORS.messageText,
   },
   newBadge: {
     paddingHorizontal: 10,
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     borderRadius:      20,
   },
   newBadgeText: {
-    fontSize:   13,
+    fontSize:   Typography.hint,
     fontWeight: "700",
   },
   // ── Botones de acción ──
@@ -457,10 +457,10 @@ const styles = StyleSheet.create({
   declineBtn: {
     backgroundColor: "transparent",
     borderWidth:     1,
-    borderColor:     "#334155",
+    borderColor:     APP_THEME.notifications.declineBorder,
   },
   actionBtnText: {
-    fontSize:   15,
+    fontSize:   Typography.label,
     fontWeight: "600",
   },
   // ── Estados ──
@@ -472,13 +472,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyText: {
-    fontSize:  18,
-    color:     "#475569",
+    fontSize:  Typography.body,
+    color:     APP_THEME.notifications.emptyIcon,
     textAlign: "center",
   },
   errorText: {
-    fontSize:  16,
-    color:     "#ef4444",
+    fontSize:  Typography.md,
+    color:     APP_THEME.notifications.errorColor,
     textAlign: "center",
   },
   retryBtn: {
@@ -486,11 +486,11 @@ const styles = StyleSheet.create({
     paddingVertical:   12,
     paddingHorizontal: 28,
     borderRadius:      9,
-    backgroundColor:   "#1e293b",
+    backgroundColor:   APP_THEME.notifications.retryBg,
   },
   retryBtnText: {
     color:      COLORS.textPrimary,
     fontWeight: "600",
-    fontSize:   16,
+    fontSize:   Typography.md,
   },
 });

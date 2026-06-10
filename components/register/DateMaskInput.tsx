@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
  
 /**
  * Input de fecha con máscara visual DD/MM/AAAA.
@@ -202,9 +202,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     height: 48,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   errorMsg: {
-    fontSize: 13,
+    fontSize: Typography.hint,
   },
 });

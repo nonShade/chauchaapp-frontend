@@ -88,35 +88,3 @@ const FALLBACK_META: NotificationMeta = {
 export function getMeta(type: NotificationType): NotificationMeta {
   return META_MAP[type] ?? FALLBACK_META;
 }
-
-// ─── Paleta de colores para la vista de notificaciones ───────────────────────
-export const NOTIFICATION_COLORS = {
-  groupBg:      "#0a1912",
-  groupBorder:  "#0d2b1c",
-  groupBadgeBg: "#0d2b1c",
-  groupAccent:  "#20a353",
-
-  tipBg:        "#10141b",
-  tipBorder:    "#292e36",
-  tipBadgeBg:   "#1d2229",
-  tipAccent:    "#ffffff",
-
-  recBg:        "#ff98451a",
-  recBorder:    "#ff984540",
-  recBadgeBg:   "#ff984526",
-  recAccent:    "#ff9845",
-
-  otherBg:      "#0a1912",
-  otherBorder:  "#0d2b1c",
-  otherBadgeBg: "#0d2b1c",
-  otherAccent:  "#00a3cd",
-
-  msgText:      "#8b8f95",
-  newBadgeBg:   "#0d2b1c",
-  newBadgeText: "#20a353",
-
-  textPrimary:   "#f1f5f9",
-  textSecond:    "#64748b",
-  cardBorder:    "#1e293b",
-  bg:            "#06090f",
-} as const;

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { APP_THEME } from '@/constants/themes';
+import { APP_THEME, Typography } from '@/constants/themes';
 import {
   getLearnModuleDetail,
   startModuleProgress,
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '500',
     marginLeft: 8,
   },
@@ -561,14 +561,14 @@ const styles = StyleSheet.create({
   },
   difficultyText: {
     color: '#47D676',
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '600',
   },
 
   // Fila 3: Title
   moduleTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
 
   // Fila 5: Content
@@ -595,13 +595,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
     marginBottom: 12,
   },
   contentContainer: {
-    backgroundColor: "#10141b",
-    borderColor: "#252c38",
+    backgroundColor: APP_THEME.card.background,
+    borderColor: APP_THEME.card.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 24,
@@ -612,21 +612,21 @@ const styles = StyleSheet.create({
   },
   contentTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 20,
+    fontSize: Typography.lg,
     fontWeight: '600',
     marginBottom: 8,
   },
   contentText: {
     color: APP_THEME.text.secondary,
-    fontSize: 18,
+    fontSize: Typography.body,
     lineHeight: 24,
   },
 
   // Fila 6: Topics
   topicsSection: {
     marginBottom: 24,
-    backgroundColor: "#10141b",
-    borderColor: "#252c38",
+    backgroundColor: APP_THEME.card.background,
+    borderColor: APP_THEME.card.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 20,
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
   topicBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: "#252c38",
+    borderColor: APP_THEME.card.border,
     borderWidth: 2,
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -648,14 +648,14 @@ const styles = StyleSheet.create({
   },
   topicText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '500',
   },
   // Fila 7: Attempts
   attemptsSection: {
     marginBottom: 24,
-    backgroundColor: "#10141b",
-    borderColor: "#252c38",
+    backgroundColor: APP_THEME.card.background,
+    borderColor: APP_THEME.card.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 20,
@@ -677,37 +677,37 @@ const styles = StyleSheet.create({
   },
   attemptNumber: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '600',
   },
   attemptDate: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
   progressBar: {
     height: 6,
-    backgroundColor: '#1A1A1B',
+    backgroundColor: APP_THEME.card.progressTrackBg,
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarComplete: {
-    backgroundColor: 'rgba(63, 211, 100, 0.2)',
+    backgroundColor: APP_THEME.status.progressCompleteBg,
   },
   progressFill: {
     height: 6,
     borderRadius: 3,
   },
   progressFillIncomplete: {
-    backgroundColor: '#FF453A',
+    backgroundColor: APP_THEME.status.danger,
   },
   progressFillComplete: {
-    backgroundColor: '#3FD364',
+    backgroundColor: APP_THEME.status.successBright,
   },
 
   // Fila 8: Quiz
   quizSection: {
-    backgroundColor: "#10141b",
-    borderColor: "#252c38",
+    backgroundColor: APP_THEME.card.background,
+    borderColor: APP_THEME.card.border,
     borderWidth: 1,
     borderRadius: 12,
     padding: 24,
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(71, 214, 118, 0.15)',
+    backgroundColor: APP_THEME.status.quizIconBg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -733,13 +733,13 @@ const styles = StyleSheet.create({
   },
   quizTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
     marginBottom: 4,
   },
   quizSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   quizButton: {
     backgroundColor: APP_THEME.button.primary.background,
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
   },
   quizButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '600',
   },
 
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
   },
   progressPercentage: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '700',
   },
   progressBarWrapper: {
@@ -803,13 +803,13 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#1A1A1B',
+    backgroundColor: APP_THEME.card.progressTrackBg,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressTrackFill: {
     height: 8,
-    backgroundColor: '#3FD364',
+    backgroundColor: APP_THEME.status.successBright,
   },
 
   errorContainer: {
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     textAlign: 'center',
     marginBottom: 14,
   },
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 14,
+    fontSize: Typography.base,
     fontWeight: '600',
   },
 });

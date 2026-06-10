@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 import { LearnModuleQuestion } from "@/types/modulesTypes";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -58,8 +58,8 @@ export default function QuizResultScreen({
   const passed         = percent >= passingScore;
 
   const scoreColor  = passed
-    ? (APP_THEME.status?.success ?? "#3FD364") as string
-    : (APP_THEME.status?.error   ?? "#FF453A") as string;
+    ? (APP_THEME.status?.success ?? APP_THEME.status.successBright) as string
+    : (APP_THEME.status?.error   ?? APP_THEME.status.danger) as string;
 
   const background      = APP_THEME.background.primary  as string;
   const cardBg          = APP_THEME.card.background     as string;
@@ -121,7 +121,7 @@ export default function QuizResultScreen({
                 <View
                   style={[
                     styles.answerIcon,
-                    { backgroundColor: answeredCorrectly ? "#3FD364" : "#FF453A" },
+                    { backgroundColor: answeredCorrectly ? APP_THEME.status.successBright : APP_THEME.status.danger },
                   ]}
                 >
                   <Ionicons
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
 
   // Banner verde
   banner: {
-    backgroundColor: "#20A353",
+    backgroundColor: APP_THEME.status.quizBannerBg,
     paddingVertical:  28,
     paddingHorizontal: 20,
     alignItems:       "center",
@@ -199,12 +199,12 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     color:      "#000",
-    fontSize:   22,
+    fontSize:   Typography.title,
     fontWeight: "800",
   },
   bannerSubtitle: {
     color:      "#000",
-    fontSize:   15,
+    fontSize:   Typography.label,
     fontWeight: "500",
     opacity:    0.75,
     textAlign:  "center",
@@ -218,15 +218,15 @@ const styles = StyleSheet.create({
     gap:               8,
   },
   scoreText: {
-    fontSize:   56,
+    fontSize:   Typography.hero,
     fontWeight: "800",
     lineHeight: 64,
   },
   scoreDetail: {
-    fontSize: 15,
+    fontSize: Typography.label,
   },
   scoreMessage: {
-    fontSize:   14,
+    fontSize:   Typography.base,
     textAlign:  "center",
     marginTop:  4,
     paddingHorizontal: 8,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
 
   // Resumen de respuestas
   summaryTitle: {
-    fontSize:          17,
+    fontSize:          Typography.subhead,
     fontWeight:        "700",
     paddingHorizontal: 16,
     paddingTop:        16,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   answerText: {
     flex:     1,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
 
   // Botones
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   reviewButtonText: {
-    fontSize:   16,
+    fontSize:   Typography.md,
     fontWeight: "600",
   },
   continueButton: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems:      "center",
   },
   continueButtonText: {
-    fontSize:   16,
+    fontSize:   Typography.md,
     fontWeight: "700",
   },
 });

@@ -1,6 +1,6 @@
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
  
 type Props = {
   step: number;
@@ -67,10 +67,10 @@ const styles = StyleSheet.create({
   },
   navButtonText: {
     fontWeight: "600",
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   loginLink: {
     textAlign: "center",
-    fontSize: 16,
+    fontSize: Typography.md,
   },
 });

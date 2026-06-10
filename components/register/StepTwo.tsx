@@ -7,7 +7,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 import { FormData, FormErrors } from "@/types/registerForm";
 import { MIN_AGE, MAX_AGE, buildAgeDate } from "@/constants/registerValidation";
 import DateDrumPicker from "./DateDrumPicker";
@@ -133,7 +133,7 @@ export default function StepTwo({
           onChangeText={(text) =>
             updateField("spentAmount", text.replace(/[^0-9]/g, ""))
           }
-          onBlur={() => validateField("spentAmount", formData.spentAmount)}
+          onBlur={() => formData.spentAmount === "" ? updateField("spentAmount", "0") : validateField("spentAmount", formData.spentAmount)}
           returnKeyType="done"
         />
       </View>
@@ -151,10 +151,10 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: 4,
     fontWeight:   "600",
-    fontSize:     14,
+    fontSize:     Typography.base,
   },
   normalText: {
-    fontSize: 16,
+    fontSize: Typography.md,
   },
   input: {
     borderWidth:      1,

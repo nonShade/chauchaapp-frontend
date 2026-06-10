@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LearnDetailView } from '../learn-detail';
 import LearnQuizStep from '../learn-quiz';
-import { APP_THEME } from '@/constants/themes';
+import { APP_THEME, Typography } from '@/constants/themes';
 import { getLearnModules, generateAndWaitForModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
@@ -148,7 +148,7 @@ export default function AprenderScreen() {
           <Text style={styles.topicsText}>{item.topicsCount} temas</Text>
         </View>
         <View style={styles.questionsContainer}>
-          <Ionicons name="bulb-outline" size={14} color="#3FD364" />
+          <Ionicons name="bulb-outline" size={14} color={APP_THEME.status.successBright} />
           <Text style={styles.questionsText}>{item.questionsCount} preguntas</Text>
         </View>
       </View>
@@ -401,14 +401,14 @@ const styles = StyleSheet.create({
 
   screenTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
     marginBottom: 6,
   },
 
   screenSubtitle: {
     color: APP_THEME.text.secondary,
-    fontSize: 16,
+    fontSize: Typography.md,
     marginBottom: 16,
   },
 
@@ -445,15 +445,15 @@ const styles = StyleSheet.create({
   },
 
   difficultyBadge: {
-    backgroundColor: 'rgba(71, 214, 118, 0.15)',
+    backgroundColor: APP_THEME.status.difficultyBadgeBg,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
 
   difficultyText: {
-    color: '#47D676',
-    fontSize: 14,
+    color: APP_THEME.status.successAlt,
+    fontSize: Typography.base,
     fontWeight: '600',
   },
 
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
 
   timeText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
     fontWeight: '500',
   },
 
@@ -480,13 +480,13 @@ const styles = StyleSheet.create({
 
   cardTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '700',
   },
 
   cardDescription: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
     lineHeight: 20,
   },
 
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
 
   topicsText: {
     color: APP_THEME.text.secondary,
-    fontSize: 14,
+    fontSize: Typography.base,
   },
 
   questionsContainer: {
@@ -514,8 +514,8 @@ const styles = StyleSheet.create({
   },
 
   questionsText: {
-    color: '#3FD364',
-    fontSize: 14,
+    color: APP_THEME.status.successBright,
+    fontSize: Typography.base,
     fontWeight: '600',
   },
 
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
 
   errorText: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     textAlign: 'center',
     marginBottom: 14,
   },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
 
   retryButtonText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '600',
   },
 
@@ -555,12 +555,12 @@ const styles = StyleSheet.create({
 
   emptyText: {
     color: APP_THEME.text.secondary,
-    fontSize: 18,
+    fontSize: Typography.body,
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: APP_THEME.background.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
 
   modalBadgeText: {
     color: APP_THEME.text.primary,
-    fontSize: 16,
+    fontSize: Typography.md,
     fontWeight: '700',
   },
 
@@ -623,14 +623,14 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
     marginBottom: 8,
   },
 
   modalDescription: {
     color: APP_THEME.text.secondary,
-    fontSize: 18,
+    fontSize: Typography.body,
     lineHeight: 26,
     marginBottom: 20,
   },
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     color: APP_THEME.text.primary,
-    fontSize: 24,
+    fontSize: Typography.xl,
     fontWeight: '700',
   },
 
@@ -662,20 +662,20 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#0F2A1E',
+    backgroundColor: APP_THEME.card.numberBadgeBg,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   numberBadgeText: {
-    color: '#2FE08F',
-    fontSize: 14,
+    color: APP_THEME.status.successMuted,
+    fontSize: Typography.base,
     fontWeight: '700',
   },
 
   listText: {
     color: APP_THEME.text.secondary,
-    fontSize: 18,
+    fontSize: Typography.body,
     lineHeight: 24,
     flex: 1,
   },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
 
   resourceText: {
     color: APP_THEME.text.primary,
-    fontSize: 18,
+    fontSize: Typography.body,
     flex: 1,
     marginRight: 8,
   },
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
 
   modalActionText: {
     color: APP_THEME.button.primary.text,
-    fontSize: 18,
+    fontSize: Typography.body,
     fontWeight: '700',
   },
 });

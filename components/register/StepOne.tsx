@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Entypo   from "@expo/vector-icons/Entypo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 import { FormData, FormErrors } from "@/types/registerForm";
 import { verifyEmail } from "@/services/api/auth";
 
@@ -244,6 +244,8 @@ export default function StepOne({
             }}
             onSubmitEditing={() => confirmPasswordRef.current?.focus()}
             returnKeyType="next"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <TouchableOpacity onPress={() => formData.password && setShowPassword((v) => !v)}>
             <Entypo
@@ -269,6 +271,8 @@ export default function StepOne({
             onChangeText={(text) => updateField("confirmPassword", text)}
             onBlur={() => validateField("confirmPassword", formData.confirmPassword)}
             onSubmitEditing={onSubmit}
+            autoCapitalize="none"
+            autoCorrect={false}
           />
           <TouchableOpacity
             onPress={() => formData.confirmPassword && setShowConfirmPassword((v) => !v)}
@@ -303,14 +307,14 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: 4,
     fontWeight:   "600",
-    fontSize:     14,
+    fontSize:     Typography.base,
   },
   input: {
     borderWidth:      1,
     borderRadius:     12,
     height:           48,
     paddingHorizontal: 16,
-    fontSize:         16,
+    fontSize:         Typography.md,
     justifyContent:   "center",
   },
   emailContainer: {
@@ -325,13 +329,13 @@ const styles = StyleSheet.create({
     flex:          1,
     height:        "100%",
     paddingVertical: 0,
-    fontSize:      16,
+    fontSize:      Typography.md,
   },
   emailStatusIcon: {
     marginLeft: 8,
   },
   hintText: {
-    fontSize:  12,
+    fontSize:  Typography.sm,
     marginTop: 2,
   },
   passwordContainer: {
@@ -346,6 +350,6 @@ const styles = StyleSheet.create({
     flex:          1,
     height:        "100%",
     paddingVertical: 0,
-    fontSize:      16,
+    fontSize:      Typography.md,
   },
 });

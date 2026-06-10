@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { APP_THEME } from "@/constants/themes";
+import { APP_THEME, Typography } from "@/constants/themes";
 import { FormData } from "@/types/registerForm";
 import { TopicOption } from "@/services/api/userProfile";
 
@@ -63,7 +63,7 @@ export default function StepThree({ formData, categoryMap, toggleCategory }: Pro
 
 const styles = StyleSheet.create({
   hint: {
-    fontSize:     16,
+    fontSize:     Typography.md,
     marginBottom: 4,
   },
   grid: {
@@ -82,11 +82,11 @@ const styles = StyleSheet.create({
   },
   gridText: {
     fontWeight: "600",
-    fontSize:   16,
+    fontSize:   Typography.md,
     textAlign:  "left",
   },
   gridSubText: {
-    fontSize:  12,
+    fontSize:  Typography.sm,
     textAlign: "left",
     marginTop: 4,
   },
