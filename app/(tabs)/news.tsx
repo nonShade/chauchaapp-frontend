@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -49,32 +49,53 @@ function getUrgencyLabel(urgency?: string) {
 }
 
 export default function NoticiasScreen() {
+  const mounted = useRef(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [modalNews, setModalNews] = useState<NewsAnalysis | null>(null);
   const [news, setNews] = useState<NewsAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load analyzed news on mount
   useEffect(() => {
     loadData();
+    return () => { mounted.current = false; };
   }, []);
+
+  function deduplicate(items: NewsAnalysis[]): NewsAnalysis[] {
+    return Array.from(
+      new Map(items.map((item) => [item.news_id, item])).values()
+    );
+  }
 
   async function loadData() {
     try {
       setLoading(true);
       setError(null);
-      const newsData = await newsService.getAnalyzedNews();
-      
-      // Deduplicar noticias por news_id
-      const uniqueNews = Array.from(
-        new Map(newsData.map((item) => [item.news_id, item])).values()
-      );
-      setNews(uniqueNews);
+
+      const existingNews = await newsService.getExistingAnalyzedNews();
+      if (!mounted.current) return;
+
+      if (existingNews.length > 0) {
+        setNews(deduplicate(existingNews));
+        setLoading(false);
+
+        newsService.triggerAndWaitForAnalysis()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setNews(deduplicate(fresh));
+          })
+          .catch((err) =>
+            console.error('Background news refresh failed:', err)
+          );
+      } else {
+        const newsData = await newsService.triggerAndWaitForAnalysis();
+        if (!mounted.current) return;
+        setNews(deduplicate(newsData));
+        setLoading(false);
+      }
     } catch (err) {
       console.error('Error loading news:', err);
+      if (!mounted.current) return;
       setError('Error al cargar las noticias');
-    } finally {
       setLoading(false);
     }
   }
