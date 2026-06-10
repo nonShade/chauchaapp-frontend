@@ -17,7 +17,7 @@ import {
   submitQuizAttempt,
 } from '@/services/api/learnModules';
 import { LearnModuleDetailResponse, LearnModuleQuestion } from '@/types/modulesTypes';
-import QuizResultScreen from "@/app/learn-quiz-result";
+import QuizResultScreen from "@/components/learn/QuizResultScreen";
 
 interface LearnQuizStepProps {
   moduleSlug?: string;
