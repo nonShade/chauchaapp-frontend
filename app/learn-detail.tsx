@@ -160,7 +160,6 @@ export function LearnDetailView({ moduleSlug, onBack, onStartQuiz, quizResultPer
       .slice(0, activeBlockIndex + 1)
       .filter((id) => sectionIds.includes(id) && !completedSectionIds.includes(id));
     await Promise.all(sectionIdsToSave.map((id) => saveCompletedSection(id)));
-    console.debug('[learn-detail] syncCurrentProgress finished');
   }, [activeBlockIndex, blockIds, completedSectionIds, moduleData, saveCompletedSection, sectionIds]);
 
   const handleBack = useCallback(async () => {
@@ -211,7 +210,6 @@ useEffect(() => {
   useEffect(() => {
     return () => {
       // fire-and-forget: sync progress on unmount
-      console.debug('[learn-detail] unmount -> syncing progress');
       void syncCurrentProgress();
     };
   }, [syncCurrentProgress]);
@@ -465,7 +463,8 @@ useEffect(() => {
           </View>
           {sortedQuizAttempts.map((attempt, idx) => {
             const percentage = Math.round((attempt.correctAnswers / attempt.totalQuestions) * 100);
-            const isComplete = percentage === 100;
+            const passingScore = module.quiz.passingScore ?? 70;
+            const isComplete = percentage >= passingScore;
             return (
               <View key={idx} style={styles.attemptItem}>
                 <View style={styles.attemptHeader}>
@@ -497,7 +496,9 @@ useEffect(() => {
           </View>
           <View style={styles.quizInfo}>
             <Text style={styles.quizTitle}>Pon a prueba tus conocimientos</Text>
-            <Text style={styles.quizSubtitle}>{module.quiz.questionsCount} preguntas sobre {module.title}</Text>
+            <Text style={styles.quizSubtitle}>
+              {module.quiz.questionsCount} preguntas · Aprobación: {module.quiz.passingScore ?? 70}%
+            </Text>
           </View>
         </View>
         <TouchableOpacity
@@ -693,7 +694,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(63, 211, 100, 0.2)',
   },
   progressFill: {
-    height: '100%',
+    height: 6,
     borderRadius: 3,
   },
   progressFillIncomplete: {
@@ -807,7 +808,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressTrackFill: {
-    height: '100%',
+    height: 8,
     backgroundColor: '#3FD364',
   },
 

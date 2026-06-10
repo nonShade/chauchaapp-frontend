@@ -9,6 +9,7 @@ import {
   Alert,
   ViewStyle,
   TextStyle,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
@@ -339,6 +340,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex:            1,
     backgroundColor: COLORS.bg,
+    paddingTop:      Platform.OS === "android" ? StatusBar.currentHeight ?? 24 : 0,
   },
   header: {
     flexDirection:     "row",

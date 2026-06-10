@@ -17,6 +17,7 @@ import {
   submitQuizAttempt,
 } from '@/services/api/learnModules';
 import { LearnModuleDetailResponse, LearnModuleQuestion } from '@/types/modulesTypes';
+import QuizResultScreen from "@/app/learn-quiz-result";
 
 interface LearnQuizStepProps {
   moduleSlug?: string;
@@ -44,6 +45,15 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
 
   useEffect(() => {
     if (!moduleSlug) return;
+
+    // Resetear estado al cargar un módulo nuevo
+    setShowResult(false);
+    setResultPercent(null);
+    setAnswers([]);
+    setCurrentQuestionIndex(0);
+    setSelectedIndex(null);
+    setFeedbackVisible(false);
+
     const load = async () => {
       try {
         setLoading(true);
@@ -219,7 +229,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const module = moduleData.module;
   const correctCount = answers.filter((item) => item.isCorrect === true).length;
   const percentScore = resultPercent ?? 0;
-  const passingScore = module.quiz.passingScore ?? 0;
+  const passingScore = module.quiz.passingScore ?? 70;
   const isPassed = percentScore >= passingScore;
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const progressPercent = totalQuestions === 0 ? 0 : Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
@@ -227,49 +237,6 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const buttonText = !feedbackVisible ? 'Confirmar respuesta' : isLastQuestion ? 'Ver resultados' : 'Siguiente respuesta';
   const questionSource = currentQuestion ? getQuestionSource(currentQuestion) : null;
   const questionExplanation = currentQuestion?.explanation || 'No hay explicación disponible.';
-
-  const renderResult = () => (
-    <View style={styles.resultContainer}>
-      <View style={styles.resultBanner}>
-        <Ionicons name="trophy" size={28} color="#000" />
-        <Text style={styles.resultBannerTitle}>Módulo completado!</Text>
-        <Text style={styles.resultBannerSubtitle}>{module.title}</Text>
-      </View>
-
-      <View style={styles.resultFeedbackSection}>
-        <Text style={[styles.resultScore, percentScore < 75 ? styles.incorrect : styles.correct]}>{percentScore}%</Text>
-        <Text style={styles.resultScoreDetail}>{correctCount} de {totalQuestions} respuestas correctas</Text>
-        <Text style={styles.resultMessage}>{getResultMessage(percentScore)}</Text>
-      </View>
-
-      <View style={styles.resultAnswersList}>
-        {questions.map((question, index) => {
-          const answer = answers[index];
-          const answeredCorrectly = answer?.isCorrect === true;
-          return (
-            <View key={question.id} style={styles.resultAnswerRow}>
-              <View style={[styles.resultAnswerIcon, answeredCorrectly ? styles.correctIcon : styles.incorrectIcon]}>
-                <Ionicons name={answeredCorrectly ? 'checkmark' : 'close'} size={16} color="#fff" />
-              </View>
-              <Text style={styles.resultAnswerTextRow}>{index + 1}. {question.question}</Text>
-            </View>
-          );
-        })}
-      </View>
-
-      <View style={styles.resultActions}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => onBack && onBack()}>
-          <Text style={styles.secondaryButtonText}>Volver a leer el módulo</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => onReturnToModules ? onReturnToModules() : onBack && onBack()}
-        >
-          <Text style={styles.primaryButtonText}>Continuar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -298,8 +265,15 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
       </View>
 
       {showResult ? (
-        renderResult()
-      ) : currentQuestion ? (
+        <QuizResultScreen
+          moduleTitle={module.title}
+          questions={questions}
+          answers={answers}
+          passingScore={module.quiz.passingScore ?? 0}
+          onReviewModule={() => onBack && onBack()}
+          onContinue={() => onReturnToModules && onReturnToModules()}
+        />
+      ) : (
         <View style={styles.quizBody}>
           <View style={styles.questionCard}>
             <Text style={styles.questionText}>{currentQuestion.question}</Text>
@@ -465,7 +439,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   resultBanner: {
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    backgroundColor: '#20A353',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
@@ -492,7 +466,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   resultScoreSuccess: {
-    color: 'lab(59 -51.76 31.73)',
+    color: '#3FD364',
   },
   resultScoreDetail: {
     color: APP_THEME.text.secondary,
@@ -524,7 +498,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   correctIcon: {
-    backgroundColor: 'lab(59 -51.76 31.73)',
+    backgroundColor: '#3FD364',
   },
   progressTrack: {
     height: 8,
@@ -533,12 +507,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressTrackFill: {
-    height: '100%',
+    height: 8,
     borderRadius: 999,
     backgroundColor: APP_THEME.button.primary.background,
   },
   incorrectIcon: {
-    backgroundColor: 'lab(54 69.81 43.62)',
+    backgroundColor: '#FF453A',
   },
   resultAnswerTextRow: {
     color: APP_THEME.text.primary,
