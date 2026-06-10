@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, TextInput, Modal, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import { FamilyGroup } from '@/types/family';
 
 const INCOME_TYPE_CHOICES = [
   { label: 'sueldo fijo', searchTerms: ['sueldo fijo', 'sueldo fijo'] },
-  { label: 'frelance', searchTerms: ['frelance', 'freelance'] },
+  { label: 'independiente', searchTerms: ['independiente', 'frelance', 'freelance'] },
 ];
 
 const normalizeText = (value: string) =>
@@ -133,6 +133,32 @@ export default function PerfilScreen() {
 
     return () => {
       isActive = false;
+    };
+  }, [accessToken]);
+
+  // Polling for family group every 2 minutes
+  useEffect(() => {
+    if (!accessToken) return;
+
+    let isActive = true;
+
+    const fetchFamilyGroup = () => {
+      familyGroupService
+        .getFamilyGroup(accessToken)
+        .then((familyGroupData) => {
+          if (!isActive || !familyGroupData) return;
+          setFamilyGroup(familyGroupData);
+        })
+        .catch(() => {
+          // Error is expected if the user doesn't have a family group
+        });
+    };
+
+    const intervalId = setInterval(fetchFamilyGroup, 2 * 60 * 1000);
+
+    return () => {
+      isActive = false;
+      clearInterval(intervalId);
     };
   }, [accessToken]);
 
@@ -267,10 +293,14 @@ export default function PerfilScreen() {
     if (!accessToken) {
       // If no token, still clear and redirect
       try {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
         await SecureStore.deleteItemAsync('user').catch(() => {});
         await SecureStore.deleteItemAsync('token').catch(() => {});
+      } catch (e) {
+        console.error('Error limpiando datos locales:', e);
       } finally {
         router.replace('/login');
       }
@@ -284,8 +314,10 @@ export default function PerfilScreen() {
       }
 
       // Clear local storage and secure store regardless of endpoint result
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
       await SecureStore.deleteItemAsync('user').catch(() => {});
       await SecureStore.deleteItemAsync('token').catch(() => {});
 
@@ -294,10 +326,14 @@ export default function PerfilScreen() {
       console.error('Error al cerrar sesión:', error);
       // Best-effort: clear local tokens and redirect
       try {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
         await SecureStore.deleteItemAsync('user').catch(() => {});
         await SecureStore.deleteItemAsync('token').catch(() => {});
+      } catch (e) {
+        console.error('Error limpiando datos locales:', e);
       } finally {
         router.replace('/login');
       }
@@ -375,8 +411,8 @@ export default function PerfilScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Cargando...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={APP_THEME.button.primary.background} />
       </View>
     );
   }
@@ -661,49 +697,54 @@ export default function PerfilScreen() {
         animationType="fade"
         onRequestClose={() => setShowCreateFamilyModal(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setShowCreateFamilyModal(false)}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         >
-          <Pressable style={styles.modalContent} onPress={() => {}}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Crear Grupo Familiar</Text>
-              <TouchableOpacity onPress={() => setShowCreateFamilyModal(false)}>
-                <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
-              </TouchableOpacity>
-            </View>
+          <Pressable 
+            style={styles.modalOverlay}
+            onPress={() => setShowCreateFamilyModal(false)}
+          >
+            <Pressable style={styles.modalContent} onPress={() => {}}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Crear Grupo Familiar</Text>
+                <TouchableOpacity onPress={() => setShowCreateFamilyModal(false)}>
+                  <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.modalBody}>
-              <Text style={styles.modalLabel}>Nombre del grupo</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Ej: Casa González"
-                placeholderTextColor={APP_THEME.text.secondary}
-                value={familyGroupName}
-                onChangeText={setFamilyGroupName}
-                editable={!creatingFamily}
-              />
-              <Text style={styles.modalHint}>Este nombre identificará a tu grupo familiar</Text>
-            </View>
+              <View style={styles.modalBody}>
+                <Text style={styles.modalLabel}>Nombre del grupo</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Ej: Casa González"
+                  placeholderTextColor={APP_THEME.text.secondary}
+                  value={familyGroupName}
+                  onChangeText={setFamilyGroupName}
+                  editable={!creatingFamily}
+                />
+                <Text style={styles.modalHint}>Este nombre identificará a tu grupo familiar</Text>
+              </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={styles.modalCancelBtn}
-                onPress={() => setShowCreateFamilyModal(false)}
-                disabled={creatingFamily}
-              >
-                <Text style={styles.modalCancelBtnText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalCreateBtn, (!familyGroupName.trim() || creatingFamily) && styles.modalCreateBtnDisabled]}
-                onPress={handleCreateFamilyGroup}
-                disabled={!familyGroupName.trim() || creatingFamily}
-              >
-                <Text style={styles.modalCreateBtnText}>{creatingFamily ? 'Creando...' : 'Crear'}</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalActions}>
+                <TouchableOpacity 
+                  style={styles.modalCancelBtn}
+                  onPress={() => setShowCreateFamilyModal(false)}
+                  disabled={creatingFamily}
+                >
+                  <Text style={styles.modalCancelBtnText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalCreateBtn, (!familyGroupName.trim() || creatingFamily) && styles.modalCreateBtnDisabled]}
+                  onPress={handleCreateFamilyGroup}
+                  disabled={!familyGroupName.trim() || creatingFamily}
+                >
+                  <Text style={styles.modalCreateBtnText}>{creatingFamily ? 'Creando...' : 'Crear'}</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal para administrar grupo familiar */}
@@ -713,83 +754,88 @@ export default function PerfilScreen() {
         animationType="fade"
         onRequestClose={() => setShowManageFamilyModal(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setShowManageFamilyModal(false)}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
         >
-          <Pressable style={styles.manageFamilyModalContent} onPress={() => {}}>
-            <View style={styles.manageFamilyHeader}>
-              <Text style={styles.manageFamilyTitle}>{familyGroup?.name}</Text>
-              <TouchableOpacity onPress={() => setShowManageFamilyModal(false)}>
-                <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
-              </TouchableOpacity>
-            </View>
+          <Pressable 
+            style={styles.modalOverlay}
+            onPress={() => setShowManageFamilyModal(false)}
+          >
+            <Pressable style={styles.manageFamilyModalContent} onPress={() => {}}>
+              <View style={styles.manageFamilyHeader}>
+                <Text style={styles.manageFamilyTitle}>{familyGroup?.name}</Text>
+                <TouchableOpacity onPress={() => setShowManageFamilyModal(false)}>
+                  <Ionicons name="close" size={24} color={APP_THEME.text.primary} />
+                </TouchableOpacity>
+              </View>
 
-            <ScrollView style={styles.manageFamilyBody} showsVerticalScrollIndicator={false}>
-              {/* Miembros */}
-              <View style={styles.manageFamilySection}>
-                <Text style={styles.manageFamilySectionTitle}>Miembros</Text>
-                {familyGroup?.members.map((member, index) => {
-                  const initials = (member.first_name.substring(0, 1) + (member.last_name?.substring(0, 1) || '')).toUpperCase();
-                  const isAdmin = index === 0;
-                  const contribution = `${member.income_contribution_percentage}%`;
-                  
-                  return (
-                    <View key={member.id} style={styles.memberRow}>
-                      <View style={styles.memberAvatar}>
-                        <Text style={styles.memberAvatarText}>{initials}</Text>
-                      </View>
-                      <View style={styles.memberInfo}>
-                        <View style={styles.memberNameRow}>
-                          <Text style={styles.memberName}>{member.first_name} {member.last_name}</Text>
-                          {isAdmin && <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Admin</Text></View>}
+              <ScrollView style={styles.manageFamilyBody} showsVerticalScrollIndicator={false}>
+                {/* Miembros */}
+                <View style={styles.manageFamilySection}>
+                  <Text style={styles.manageFamilySectionTitle}>Miembros</Text>
+                  {familyGroup?.members.map((member, index) => {
+                    const initials = (member.first_name.substring(0, 1) + (member.last_name?.substring(0, 1) || '')).toUpperCase();
+                    const isAdmin = index === 0;
+                    const contribution = `${member.income_contribution_percentage}%`;
+                    
+                    return (
+                      <View key={member.id} style={styles.memberRow}>
+                        <View style={styles.memberAvatar}>
+                          <Text style={styles.memberAvatarText}>{initials}</Text>
                         </View>
-                        <Text style={styles.memberContribution}>Contribución: {contribution}</Text>
+                        <View style={styles.memberInfo}>
+                          <View style={styles.memberNameRow}>
+                            <Text style={styles.memberName}>{member.first_name} {member.last_name}</Text>
+                            {isAdmin && <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Admin</Text></View>}
+                          </View>
+                          <Text style={styles.memberContribution}>Contribución: {contribution}</Text>
+                        </View>
+                        {!isAdmin && (
+                          <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
+                            <Ionicons name="trash-outline" size={20} color={APP_THEME.status.error} />
+                          </TouchableOpacity>
+                        )}
                       </View>
-                      {!isAdmin && (
-                        <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
-                          <Ionicons name="trash-outline" size={20} color={APP_THEME.status.error} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* Invitar por correo */}
-              <View style={styles.manageFamilySection}>
-                <Text style={styles.manageFamilySectionTitle}>Invitar por correo</Text>
-                <View style={styles.inviteContainer}>
-                  <TextInput
-                    style={styles.inviteInput}
-                    placeholder="correo@ejemplo.com"
-                    placeholderTextColor={APP_THEME.text.secondary}
-                    value={inviteEmail}
-                    onChangeText={setInviteEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!sendingInvite}
-                  />
-                  <TouchableOpacity 
-                    style={styles.inviteSendBtn}
-                    onPress={handleInviteMember}
-                    disabled={!inviteEmail.trim() || sendingInvite}
-                  >
-                    <Ionicons name="checkmark" size={20} color="white" />
-                  </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                <Text style={styles.inviteHint}>El usuario recibirá una notificación para unirse al grupo.</Text>
-              </View>
-            </ScrollView>
 
-            <TouchableOpacity 
-              style={styles.doneBtn}
-              onPress={() => setShowManageFamilyModal(false)}
-            >
-              <Text style={styles.doneBtnText}>Listo</Text>
-            </TouchableOpacity>
+                {/* Invitar por correo */}
+                <View style={styles.manageFamilySection}>
+                  <Text style={styles.manageFamilySectionTitle}>Invitar por correo</Text>
+                  <View style={styles.inviteContainer}>
+                    <TextInput
+                      style={styles.inviteInput}
+                      placeholder="correo@ejemplo.com"
+                      placeholderTextColor={APP_THEME.text.secondary}
+                      value={inviteEmail}
+                      onChangeText={setInviteEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      editable={!sendingInvite}
+                    />
+                    <TouchableOpacity 
+                      style={styles.inviteSendBtn}
+                      onPress={handleInviteMember}
+                      disabled={!inviteEmail.trim() || sendingInvite}
+                    >
+                      <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.inviteHint}>El usuario recibirá una notificación para unirse al grupo.</Text>
+                </View>
+              </ScrollView>
+
+              <TouchableOpacity 
+                style={styles.doneBtn}
+                onPress={() => setShowManageFamilyModal(false)}
+              >
+                <Text style={styles.doneBtnText}>Listo</Text>
+              </TouchableOpacity>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

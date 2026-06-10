@@ -29,7 +29,7 @@ export default function Header({ userName = "Usuario" }) {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.profileSection}
-        onPress={() => router.push("/profile")}
+        onPress={() => router.push("/(tabs)/profile")}
       >
         <View style={styles.avatar}>
           <Image 

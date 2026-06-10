@@ -56,10 +56,32 @@ export default function HomeScreen() {
 
     const loadTodayTip = async () => {
       setTipLoading(true);
-      const tip = await tipsService.getTodayTip();
 
-      if (mounted) {
+      const tip = await tipsService.getTodayTip();
+      if (!mounted) return;
+
+      if (tip) {
         setDailyTip(tip);
+        setTipLoading(false);
+
+        tipsService.generateAndWaitForTips()
+          .then((all) => {
+            if (!mounted || all.length === 0) return;
+            const today = all.find(
+              (t) => t.day_of_week === new Date().getDay()
+            );
+            if (today) setDailyTip(today);
+          })
+          .catch((err) =>
+            console.error('Background tip refresh failed:', err)
+          );
+      } else {
+        const all = await tipsService.generateAndWaitForTips();
+        if (!mounted) return;
+        const today = all.find(
+          (t) => t.day_of_week === new Date().getDay()
+        );
+        setDailyTip(today ?? all[0] ?? null);
         setTipLoading(false);
       }
     };

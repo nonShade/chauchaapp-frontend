@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,13 @@ import {
   Modal,
   Pressable,
   TouchableWithoutFeedback,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { PiggyBank } from 'lucide-react-native';
 import { APP_THEME } from '@/constants/themes';
 import NewsCard from '@/components/home/NewsCard';
 import { NewsSkeleton } from '@/components/home/NewsSkeleton';
-import { newsService, Topic, NewsAnalysis } from '@/services/api/news';
-import { useAuth } from '@/contexts/AuthContext';
-import { runBackgroundRequest } from '@/services/api/backgroundRequest';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+import { newsService, NewsAnalysis } from '@/services/api/news';
 
 const NEWS_TAG_COLORS = {
   bg: '#1a2a3a',
@@ -54,48 +49,53 @@ function getUrgencyLabel(urgency?: string) {
 }
 
 export default function NoticiasScreen() {
-  const { accessToken } = useAuth();
+  const mounted = useRef(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
   const [modalNews, setModalNews] = useState<NewsAnalysis | null>(null);
-  const [topics, setTopics] = useState<Topic[]>([]);
   const [news, setNews] = useState<NewsAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load topics and news on mount
   useEffect(() => {
     loadData();
+    return () => { mounted.current = false; };
   }, []);
+
+  function deduplicate(items: NewsAnalysis[]): NewsAnalysis[] {
+    return Array.from(
+      new Map(items.map((item) => [item.news_id, item])).values()
+    );
+  }
 
   async function loadData() {
     try {
       setLoading(true);
       setError(null);
-      const [topicsData, newsData] = await Promise.all([
-        newsService.getTopics(),
-        newsService.getAnalyzedNews(),
-      ]);
-      setTopics(topicsData);
-      
-      // Deduplicar noticias por news_id
-      const uniqueNews = Array.from(
-        new Map(newsData.map((item) => [item.news_id, item])).values()
-      );
-      setNews(uniqueNews);
 
-      // Si no hay noticias analizadas y hay token, disparar analyze-full en background
-      if (uniqueNews.length === 0 && accessToken && API_BASE_URL) {
-        console.log('No hay noticias analizadas, disparando /news/analyze-full');
-        void runBackgroundRequest('/news/analyze-full', {
-          token: accessToken,
-          baseUrl: API_BASE_URL,
-          stripApiVersion: false,
-        });
+      const existingNews = await newsService.getExistingAnalyzedNews();
+      if (!mounted.current) return;
+
+      if (existingNews.length > 0) {
+        setNews(deduplicate(existingNews));
+        setLoading(false);
+
+        newsService.triggerAndWaitForAnalysis()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setNews(deduplicate(fresh));
+          })
+          .catch((err) =>
+            console.error('Background news refresh failed:', err)
+          );
+      } else {
+        const newsData = await newsService.triggerAndWaitForAnalysis();
+        if (!mounted.current) return;
+        setNews(deduplicate(newsData));
+        setLoading(false);
       }
     } catch (err) {
       console.error('Error loading news:', err);
+      if (!mounted.current) return;
       setError('Error al cargar las noticias');
-    } finally {
       setLoading(false);
     }
   }
@@ -192,10 +192,10 @@ export default function NoticiasScreen() {
       )}
 
       {/* News Detail Modal */}
-      <Modal visible={!!modalNews} animationType="fade" transparent statusBarTranslucent>
-        <TouchableWithoutFeedback onPress={() => setModalNews(null)}>
-          <View style={styles.modalOverlay}>
-            <Pressable style={styles.modalCard} onPress={() => {}}>
+      <Modal visible={!!modalNews} animationType="fade" transparent statusBarTranslucent onRequestClose={() => setModalNews(null)}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setModalNews(null)} />
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={styles.impactBadgeContainer}>
                 <View
@@ -324,9 +324,8 @@ export default function NoticiasScreen() {
                 Ver artículo completo
               </Text>
             </TouchableOpacity>
-            </Pressable>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
     </View>
   );

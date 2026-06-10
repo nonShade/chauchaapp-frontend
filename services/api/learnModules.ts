@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { LearnModule, LearnModuleDetailResponse, ModuleProgress } from '@/types/modulesTypes';
 import apiClient from './apiClient';
+import { AsyncTaskResponse, TaskStatusResponse, waitForTask } from './asyncTask';
 
 const parseJSON = (value: string | null): any | null => {
   if (!value) return null;
@@ -43,6 +44,33 @@ const getUserIdFromStorage = async (): Promise<string | null> => {
 export const getLearnModules = async (): Promise<LearnModule[]> => {
   const response = await apiClient.get('/education/modules');
   return response.data.modules || [];
+};
+
+async function triggerModulesGeneration(): Promise<AsyncTaskResponse> {
+  const response = await apiClient.post<AsyncTaskResponse>('/education/modules/generate', {
+    items: [
+      { topic: 'tasas', level: 'Principiante' },
+      { topic: 'creditos', level: 'Intermedio' },
+      { topic: 'fondos mutuos', level: 'Avanzado' },
+    ],
+  });
+  return response.data;
+}
+
+async function getModulesTaskStatus(taskId: string): Promise<TaskStatusResponse<{ modules: LearnModule[] }>> {
+  const response = await apiClient.get<TaskStatusResponse<{ modules: LearnModule[] }>>(
+    `/education/modules/tasks/${taskId}`,
+  );
+  return response.data;
+}
+
+export const generateAndWaitForModules = async (): Promise<LearnModule[]> => {
+  const { task_id } = await triggerModulesGeneration();
+  const result = await waitForTask<{ modules: LearnModule[] }>(
+    task_id,
+    (id) => `/education/modules/tasks/${id}`,
+  );
+  return result.modules ?? [];
 };
 
 export const getLearnModuleDetail = async (moduleId: string): Promise<LearnModuleDetailResponse> => {
