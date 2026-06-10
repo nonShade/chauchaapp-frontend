@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LearnDetailView } from '../learn-detail';
 import LearnQuizStep from '../learn-quiz';
 import { APP_THEME } from '@/constants/themes';
-import { getLearnModules } from '@/services/api/learnModules';
+import { getLearnModules, generateAndWaitForModules } from '@/services/api/learnModules';
 import { LearnModule } from '@/types/modulesTypes';
 import ModulePlanningTabs from '@/components/learn/ModulePlanningTabs';
 import PlanningCard from '@/components/learn/PlanningCard';
 import { LearnModulesSkeleton } from '@/components/learn/LearnModulesSkeleton';
 import { PlanningSkeleton } from '@/components/learn/PlanningSkeleton';
-import { getFinancialPlanningTips } from '@/services/api/financialPlanning';
+import { getFinancialPlanningTips, generateAndWaitForFinancialPlanning } from '@/services/api/financialPlanning';
 import { FinancialPlanningTip } from '@/types/planningTypes';
 
 export default function AprenderScreen() {
+  const mounted = useRef(true);
   const [modules, setModules] = useState<LearnModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,18 +41,38 @@ export default function AprenderScreen() {
   useEffect(() => {
     loadModules();
     loadPlanningTips();
+    return () => { mounted.current = false; };
   }, []);
 
   async function loadModules() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getLearnModules();
-      setModules(data);
+
+      const existing = await getLearnModules();
+      if (!mounted.current) return;
+
+      if (existing.length > 0) {
+        setModules(existing);
+        setLoading(false);
+
+        generateAndWaitForModules()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setModules(fresh);
+          })
+          .catch((err) =>
+            console.error('Background modules refresh failed:', err)
+          );
+      } else {
+        const data = await generateAndWaitForModules();
+        if (!mounted.current) return;
+        setModules(data);
+        setLoading(false);
+      }
     } catch (err) {
       console.error('Error cargando módulos:', err);
+      if (!mounted.current) return;
       setError('No se pudieron cargar los módulos. Intenta de nuevo más tarde.');
-    } finally {
       setLoading(false);
     }
   }
@@ -60,12 +81,31 @@ export default function AprenderScreen() {
     try {
       setPlanningLoading(true);
       setPlanningError(null);
-      const data = await getFinancialPlanningTips();
-      setPlanningTips(data);
+
+      const existing = await getFinancialPlanningTips();
+      if (!mounted.current) return;
+
+      if (existing.length > 0) {
+        setPlanningTips(existing);
+        setPlanningLoading(false);
+
+        generateAndWaitForFinancialPlanning()
+          .then((fresh) => {
+            if (mounted.current && fresh.length > 0) setPlanningTips(fresh);
+          })
+          .catch((err) =>
+            console.error('Background planning refresh failed:', err)
+          );
+      } else {
+        const data = await generateAndWaitForFinancialPlanning();
+        if (!mounted.current) return;
+        setPlanningTips(data);
+        setPlanningLoading(false);
+      }
     } catch (err) {
       console.error('Error cargando planificacion:', err);
+      if (!mounted.current) return;
       setPlanningError('No se pudo cargar la planificación. Intenta de nuevo más tarde.');
-    } finally {
       setPlanningLoading(false);
     }
   }
@@ -222,11 +262,15 @@ export default function AprenderScreen() {
         />
       )}
       <Modal visible={!!selectedPlanningTip} animationType="fade" transparent statusBarTranslucent>
-        <TouchableWithoutFeedback onPress={() => setSelectedPlanningTip(null)}>
-          <View style={styles.modalOverlay}>
-            <Pressable style={styles.modalCard} onPress={() => {}}>
-              {selectedPlanningTip && (
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={StyleSheet.absoluteFill} 
+            activeOpacity={1} 
+            onPress={() => setSelectedPlanningTip(null)} 
+          />
+          <View style={styles.modalCard}>
+            {selectedPlanningTip && (
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHeader}>
                     <View style={styles.modalBadgeWrapper}>
                       <View style={[styles.modalIconWrap, { backgroundColor: modalCategoryStyle.iconBg }]}>
@@ -308,9 +352,8 @@ export default function AprenderScreen() {
               >
                 <Text style={styles.modalActionText}>Entendido</Text>
               </TouchableOpacity>
-            </Pressable>
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
     </View>
   );

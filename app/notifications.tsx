@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   SectionList,
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   Alert,
   ViewStyle,
   TextStyle,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
 import { useRouter, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

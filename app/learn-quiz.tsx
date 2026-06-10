@@ -72,7 +72,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
 
   const questions = moduleData?.module.quiz.questions || [];
   const totalQuestions = questions.length;
-  const currentQuestion = questions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex] as LearnModuleQuestion | undefined;
 
   const determineCorrectness = (question: LearnModuleQuestion, optionIndex: number): boolean | null => {
     if (question.correctAnswer != null && typeof question.correctAnswer === 'number') {
@@ -235,7 +235,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
   const progressPercent = totalQuestions === 0 ? 0 : Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100);
   const currentAnswer = answers[currentQuestionIndex];
   const buttonText = !feedbackVisible ? 'Confirmar respuesta' : isLastQuestion ? 'Ver resultados' : 'Siguiente respuesta';
-  const questionSource = getQuestionSource(currentQuestion as any);
+  const questionSource = currentQuestion ? getQuestionSource(currentQuestion) : null;
   const questionExplanation = currentQuestion?.explanation || 'No hay explicación disponible.';
 
   return (
@@ -277,9 +277,9 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
         <View style={styles.quizBody}>
           <View style={styles.questionCard}>
             <Text style={styles.questionText}>{currentQuestion.question}</Text>
-            {currentQuestion.options.map((option, idx) => {
+            {(currentQuestion.options || []).map((option, idx) => {
               const selected = selectedIndex === idx;
-              const isCorrect = determineCorrectness(currentQuestion as any, idx) === true;
+              const isCorrect = determineCorrectness(currentQuestion, idx) === true;
               const isWrongSelected = feedbackVisible && currentAnswer?.selectedIndex === idx && currentAnswer?.isCorrect === false;
               const showIcon = feedbackVisible && (isCorrect || isWrongSelected);
 
@@ -342,7 +342,7 @@ export default function LearnQuizStep({ moduleSlug, onBack, onQuizComplete, onRe
             <Text style={styles.nextButtonText}>{buttonText}</Text>
           </TouchableOpacity>
         </View>
-      )}
+      ) : null}
     </ScrollView>
   );
 }

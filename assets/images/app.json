@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "chauchaapp-frontend",
+    "name": "ChauchaApp",
     "slug": "chauchaapp-frontend",
     "owner": "tito1",
     "version": "1.0.0",
@@ -15,10 +15,8 @@
     "android": {
       "package": "com.nonshade.chauchaapp",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -32,13 +30,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ChauchaApp.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
@@ -47,10 +42,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "f0095d8f-9af3-45bc-8a12-7a6c28c866c5"
-      }
+      "eas": {}
     }
   }
 }

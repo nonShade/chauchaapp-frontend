@@ -136,6 +136,7 @@ function DrumColumn({ items, selectedIndex, onSelect, formatItem, width }: DrumC
     <View style={[styles.columnWrapper, { width }]} {...webHandlers}>
       <ScrollView
         ref={scrollRef}
+        nestedScrollEnabled={true}
         showsVerticalScrollIndicator={false}
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"

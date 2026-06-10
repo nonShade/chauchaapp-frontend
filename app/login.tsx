@@ -11,11 +11,14 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { APP_THEME } from "@/constants/themes";
 import { useAuth } from "@/contexts/AuthContext";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 const LOGIN_COLORS = {
   background: APP_THEME.background.primary,
@@ -76,7 +79,7 @@ export default function LoginScreen() {
     if (emailErr || passErr) return;
 
     try {
-      const response = await fetch("http://localhost:8001/v1/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -109,11 +112,12 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={[styles.container, { backgroundColor: LOGIN_COLORS.background }]}
-    >
-      <ScrollView
+    <SafeAreaView style={{ flex: 1, backgroundColor: LOGIN_COLORS.background }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={[styles.container, { backgroundColor: LOGIN_COLORS.background }]}
+      >
+        <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -309,6 +313,7 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -331,6 +336,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginBottom: 16,
+    backgroundColor: "black",
+    borderRadius: 50,
   },
   appName: {
     fontSize: 28,
