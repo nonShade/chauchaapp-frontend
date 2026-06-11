@@ -1,4 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { APP_THEME } from '@/constants/themes';
 import { getCategoryIcon, FREQUENCY_ICONS, NAV_ICONS } from '@/constants/icons';
@@ -47,8 +49,18 @@ export default function NewTransactionForm({
   const categories = isGasto ? GASTO_CATEGORIES : INGRESO_CATEGORIES;
   const accentColor = isGasto ? APP_THEME.cards.expense.text : APP_THEME.cards.income.text;
   const accentBackground = isGasto ? APP_THEME.cards.expense.background : APP_THEME.cards.income.background;
+  const calendarAccentColor = isGroupMode ? APP_THEME.group.primary : APP_THEME.components.tabs.activeBg;
   const dateLabel = isGasto ? 'Fecha del gasto' : 'Fecha del ingreso';
   const dateHint = isGasto ? 'Cuando se realizara el gasto' : 'Cuando recibirás el ingreso';
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      onDateChange(selectedDate.toISOString());
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -133,18 +145,22 @@ export default function NewTransactionForm({
       <View style={styles.section}>
         <Text style={styles.label}>{dateLabel}</Text>
         <Text style={styles.subLabel}>{dateHint}</Text>
-        <View style={styles.dateContainer}>
+        <TouchableOpacity style={styles.dateContainer} onPress={() => setShowDatePicker(true)}>
           <Ionicons name={NAV_ICONS.calendar} size={18} color={APP_THEME.text.secondary} />
-          <TextInput
-            style={[styles.dateText, { flex: 1, padding: 0 }]}
-            value={date}
-            onChangeText={onDateChange}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={APP_THEME.text.secondary + '80'}
-            maxLength={10}
-          />
+          <Text style={[styles.dateText, { flex: 1 }]}>
+            {formattedDate}
+          </Text>
           <Ionicons name={NAV_ICONS.calendarFill} size={18} color={APP_THEME.text.secondary} style={{ marginLeft: 'auto' }} />
-        </View>
+        </TouchableOpacity>
+        
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date(date)}
+            mode="date"
+            display="default"
+            onChange={onChangeDate}
+          />
+        )}
       </View>
 
       {/* ---- Frecuencia ---- */}
