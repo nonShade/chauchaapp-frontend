@@ -33,6 +33,11 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Set EAS Secrets
+        run: |
+          eas secret:create --scope project --name EXPO_PUBLIC_API_BASE_URL --value "${{ secrets.BACKEND_URL }}/v1" --force
+          eas secret:create --scope project --name EXPO_PUBLIC_ALT_API_BASE_URL --value "${{ secrets.BACKEND_URL }}" --force
+
       - name: Build APK
         run: eas build --platform android --profile preview --non-interactive
 

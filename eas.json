@@ -12,17 +12,11 @@
       "android": {
         "buildType": "apk"
       },
-      "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://recount-stucco-unskilled.ngrok-free.dev/v1"
-      }
+      "distribution": "internal"
     },
     "production": {
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://recount-stucco-unskilled.ngrok-free.dev/v1"
       }
     }
   }
