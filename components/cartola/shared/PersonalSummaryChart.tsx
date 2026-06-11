@@ -93,7 +93,7 @@ export default function PersonalSummaryChart({ data, isGroup }: PersonalSummaryC
           activeOpacity={0.8}
         >
           <Text style={[styles.tabText, isBoth && { color: isGroup ? APP_THEME.group.primary : APP_THEME.cards.balance.tagText, fontWeight: '700' }]}>
-            Ambos
+            I vs G
           </Text>
         </TouchableOpacity>
 

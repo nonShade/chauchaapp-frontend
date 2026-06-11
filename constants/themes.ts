@@ -84,6 +84,9 @@ export const APP_THEME = {
       tagText: "#FF8A4C",
       iconBg: "#FF8A4C",
     },
+    pending: {
+      text: "#F59E0B",
+    },
     categories: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'],
   },
 
