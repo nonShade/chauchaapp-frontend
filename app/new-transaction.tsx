@@ -18,13 +18,20 @@ import {
 import { LocalTransactionType, LocalFrequency } from '@/types/transaction';
 
 const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return new Date().toISOString();
 };
 
 const formatDateDisplay = (iso: string) => {
-  const [y, m, d] = iso.split('-');
-  return `${d} / ${m} / ${y}`;
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) throw new Error();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day} / ${month} / ${year}`;
+  } catch (e) {
+    return iso;
+  }
 };
 
 export default function NewTransactionScreen() {

@@ -34,6 +34,14 @@ const formatDate = (dateString: string) => {
   return `${day}-${month}-${year} ${hours}:${minutes}`;
 };
 
+const isPending = (dateString: string, monthId: string): boolean => {
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  if (monthId !== currentMonthKey) return false;
+  const txDate = new Date(dateString);
+  return txDate > now;
+};
+
 export default function MonthAccordion({ transactions, summary, onDelete, onRefresh, isGroup }: MonthAccordionProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDesc, setEditDesc] = useState('');
@@ -202,7 +210,17 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 />
                               ) : (
                                   <>
-                                    <Text style={styles.detailItemName}>{isGroup ? 'Ingreso' : (item.description ? (item.category || 'Otros') : (item.category || 'Ingreso'))}</Text>
+                                    <View style={styles.itemNameRow}>
+                                      {isPending(item.date, month.id) && (
+                                        <Ionicons name="time-outline" size={13} color={APP_THEME.cards.pending.text} />
+                                      )}
+                                      <Text style={[styles.detailItemName, isPending(item.date, month.id) && styles.pendingText]}>
+                                        {isGroup ? 'Ingreso' : (item.description ? (item.category || 'Otros') : (item.category || 'Ingreso'))}
+                                      </Text>
+                                      {isPending(item.date, month.id) && (
+                                        <View style={styles.pendingBadge}><Text style={styles.pendingBadgeText}>(Pendiente)</Text></View>
+                                      )}
+                                    </View>
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
@@ -286,7 +304,17 @@ export default function MonthAccordion({ transactions, summary, onDelete, onRefr
                                 />
                               ) : (
                                   <>
-                                    <Text style={styles.detailItemName}>{item.description ? (item.category || 'Otros') : (item.category || 'Gasto')}</Text>
+                                    <View style={styles.itemNameRow}>
+                                      {isPending(item.date, month.id) && (
+                                        <Ionicons name="time-outline" size={13} color={APP_THEME.cards.pending.text} />
+                                      )}
+                                      <Text style={[styles.detailItemName, isPending(item.date, month.id) && styles.pendingText]}>
+                                        {item.description ? (item.category || 'Otros') : (item.category || 'Gasto')}
+                                      </Text>
+                                      {isPending(item.date, month.id) && (
+                                        <View style={styles.pendingBadge}><Text style={styles.pendingBadgeText}>(Pendiente)</Text></View>
+                                      )}
+                                    </View>
                                     {item.description ? <Text style={styles.detailItemDescription}>{item.description}</Text> : <Text style={styles.detailItemDescription}>Sin descripción</Text>}
                                     <Text style={styles.detailItemDate}>{formatDate(item.date)}</Text>
                                   </>
@@ -498,5 +526,24 @@ const styles = StyleSheet.create({
     width: 80,
     textAlign: 'right',
     fontWeight: 'bold',
+  },
+  itemNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flexWrap: 'wrap',
+    marginBottom: 2,
+  },
+  pendingText: {
+    color: APP_THEME.cards.pending.text,
+  },
+  pendingBadge: {
+    marginLeft: 2,
+  },
+  pendingBadgeText: {
+    color: APP_THEME.cards.pending.text,
+    fontSize: 10,
+    fontWeight: '600',
+    fontStyle: 'italic',
   },
 });

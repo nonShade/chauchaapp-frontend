@@ -25,7 +25,12 @@ export const getSummary = async (): Promise<SummaryResponse> => {
 };
 
 export const getTransactionsHistory = async (): Promise<Transaction[]> => {
-  const response = await apiClient.get('/transactions/individual?limit=100');
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+  const endDate = `${year}-${month}-${lastDay}`;
+  const response = await apiClient.get(`/transactions/individual?limit=100&end_date=${endDate}`);
   return response.data;
 };
 
@@ -54,7 +59,12 @@ export const getGroupSummary = async (): Promise<SummaryResponse> => {
 };
 
 export const getGroupTransactionsHistory = async (): Promise<Transaction[]> => {
-  const response = await apiClient.get('/transactions/family-group?limit=100');
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+  const endDate = `${year}-${month}-${lastDay}`;
+  const response = await apiClient.get(`/transactions/family-group?limit=100&end_date=${endDate}`);
   return response.data;
 };
 
