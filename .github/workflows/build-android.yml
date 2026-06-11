@@ -35,8 +35,8 @@ jobs:
 
       - name: Set EAS Secrets
         run: |
-          eas env:create --scope project --name EXPO_PUBLIC_API_BASE_URL --value "${{ secrets.BACKEND_URL }}/v1" --type string --environment production --non-interactive --force
-          eas env:create --scope project --name EXPO_PUBLIC_ALT_API_BASE_URL --value "${{ secrets.BACKEND_URL }}" --type string --environment production --non-interactive --force
+          eas env:create --scope project --name EXPO_PUBLIC_API_BASE_URL --value "${{ secrets.BACKEND_URL }}/v1" --type string --visibility secret --environment production --non-interactive --force
+          eas env:create --scope project --name EXPO_PUBLIC_ALT_API_BASE_URL --value "${{ secrets.BACKEND_URL }}" --type string --visibility secret --environment production --non-interactive --force
 
       - name: Build APK
         run: eas build --platform android --profile preview --non-interactive
