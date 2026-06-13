@@ -273,7 +273,7 @@ export default function RegisterScreen() {
             <Text style={[styles.title, { color: foreground }]}>
               {STEP_TITLES[step]}
             </Text>
-            <Text style={[styles.subtitle, { color: mutedForeground }]}>
+            <Text style={[styles.subtitle, { color: foreground }]}>
               {STEP_SUBTITLES[step]}
             </Text>
           </View>
@@ -374,7 +374,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    fontSize:     Typography.base,
+    fontSize:     16,
+    fontWeight:   "500",
     marginBottom: 16,
   },
   formCard: {
