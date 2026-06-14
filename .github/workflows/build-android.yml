@@ -39,7 +39,7 @@ jobs:
           eas env:create --scope project --name EXPO_PUBLIC_ALT_API_BASE_URL --value "${{ secrets.BACKEND_URL }}" --type string --visibility plaintext --environment production --non-interactive --force
 
       - name: Build APK
-        run: eas build --platform android --profile preview --non-interactive --environment production
+        run: eas build --platform android --profile preview --non-interactive
 
       - name: Get APK URL
         id: get_url
