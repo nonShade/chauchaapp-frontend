@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { LearnModule, LearnModuleDetailResponse, ModuleProgress } from '@/types/modulesTypes';
 import apiClient from './apiClient';
@@ -18,14 +17,6 @@ const getUserIdFromStorage = async (): Promise<string | null> => {
 
   if (typeof localStorage !== 'undefined') {
     userDataStr = localStorage.getItem('user');
-  }
-
-  if (!userDataStr) {
-    try {
-      userDataStr = await AsyncStorage.getItem('user');
-    } catch (e) {
-      console.warn('No se pudo leer user desde AsyncStorage:', e);
-    }
   }
 
   if (!userDataStr) {

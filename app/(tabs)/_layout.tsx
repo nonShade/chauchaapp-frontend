@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Tabs, useRouter, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { APP_THEME } from "@/constants/themes";
 import Header from "@/components/home/Header";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -85,9 +84,9 @@ export default function TabLayout() {
     async function loadUser() {
       let userDataStr: string | null = null;
       try {
-        userDataStr = await AsyncStorage.getItem('user');
+        userDataStr = await SecureStore.getItemAsync('user');
       } catch (e) {
-        console.error('Error leyendo AsyncStorage:', e);
+        console.error('Error leyendo SecureStore:', e);
       }
       
       if (userDataStr) {

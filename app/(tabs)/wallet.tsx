@@ -12,7 +12,7 @@ import { useCartolaData } from '@/hooks/useCartolaData';
 import { deleteTransaction } from '@/services/api/transactions';
 import { useGroupData } from '@/hooks/useGroupData';
 import GroupEmptyState from '@/components/cartola/group/GroupEmptyState';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { tipsService, DailyTip } from '@/services/api/tips';
 
 const formatCurrency = (value: number) => {
@@ -41,7 +41,7 @@ export default function CartolaScreen() {
         const today = new Date().toISOString().split('T')[0];
         const storageKey = 'wallet_daily_tip';
 
-        const storedData = await AsyncStorage.getItem(storageKey);
+        const storedData = await SecureStore.getItemAsync(storageKey);
 
         if (storedData) {
           const { date, tip } = JSON.parse(storedData);
@@ -61,7 +61,7 @@ export default function CartolaScreen() {
 
         const randomTip = tips[Math.floor(Math.random() * tips.length)];
 
-        await AsyncStorage.setItem(
+        await SecureStore.setItemAsync(
           storageKey,
           JSON.stringify({
             date: today,

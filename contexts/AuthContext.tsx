@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 interface AuthContextType {
   accessToken: string | null;
@@ -13,16 +13,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar token desde AsyncStorage al iniciar
+  // Cargar token desde SecureStore al iniciar
   useEffect(() => {
     const loadToken = async () => {
       try {
-        const savedToken = await AsyncStorage.getItem('token');
+        const savedToken = await SecureStore.getItemAsync('token');
         if (savedToken) {
           setAccessToken(savedToken);
         }
       } catch (error) {
-        console.error('Error al cargar token desde AsyncStorage:', error);
+        console.error('Error al cargar token desde SecureStore:', error);
       } finally {
         setIsLoading(false);
       }
@@ -31,13 +31,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadToken();
   }, []);
 
-  // Guardar token en AsyncStorage cuando cambia
+  // Guardar token en SecureStore cuando cambia
   const handleSetAccessToken = (token: string | null) => {
     setAccessToken(token);
     if (token) {
-      AsyncStorage.setItem('token', token).catch((e) => console.error('Error guardando token:', e));
+      SecureStore.setItemAsync('token', token).catch((e) => console.error('Error guardando token:', e));
     } else {
-      AsyncStorage.removeItem('token').catch((e) => console.error('Error removiendo token:', e));
+      SecureStore.deleteItemAsync('token').catch((e) => console.error('Error removiendo token:', e));
     }
   };
 

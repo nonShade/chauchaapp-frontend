@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import { useAuth } from "@/contexts/AuthContext";
 import {
   View,
@@ -200,7 +200,7 @@ export default function RegisterScreen() {
       await handleLogin();
 
       // Disparar generación de tips en background tras el registro
-      const token = await AsyncStorage.getItem("token");
+      const token = await SecureStore.getItemAsync("token");
       if (token) {
         void runBackgroundRequest("/tips/generate", {
           token,
@@ -224,14 +224,14 @@ export default function RegisterScreen() {
       });
 
       if (data.access_token) {
-        await AsyncStorage.setItem("token", data.access_token);
+        await SecureStore.setItemAsync("token", data.access_token);
         setAccessToken(data.access_token);
       }
       if (data.refresh_token) {
-        await AsyncStorage.setItem("refresh_token", data.refresh_token);
+        await SecureStore.setItemAsync("refresh_token", data.refresh_token);
       }
       if (data.user) {
-        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+        await SecureStore.setItemAsync("user", JSON.stringify(data.user));
       }
     } catch (err: any) {
       console.error("Login error:", err.message || err);

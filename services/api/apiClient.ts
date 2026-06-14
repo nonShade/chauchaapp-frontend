@@ -1,6 +1,5 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -13,19 +12,13 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   async (config) => {
-    let token: string | null = null;
     try {
-      token = await AsyncStorage.getItem('token');
-    } catch (e) {
-      // fallback to SecureStore if AsyncStorage fails
-      try {
-        token = await SecureStore.getItemAsync('token');
-      } catch (err) {
-        // ignore
+      const token = await SecureStore.getItemAsync('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
-    }
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    } catch (e) {
+      // ignore
     }
     return config;
   },
@@ -38,41 +31,24 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      let refreshToken: string | null = null;
       try {
-        refreshToken = await AsyncStorage.getItem('refresh_token');
-      } catch (e) {
-        try {
-          refreshToken = await SecureStore.getItemAsync('refresh_token');
-        } catch (err) {
-          refreshToken = null;
-        }
-      }
-      if (refreshToken) {
-        try {
-          const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+        const refreshToken = await SecureStore.getItemAsync('refresh_token');
+        if (refreshToken) {
           const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           });
           const newToken = res.data.access_token;
-          try {
-            await AsyncStorage.setItem('token', newToken);
-          } catch (e) {
-            // ignore
-          }
+          await SecureStore.setItemAsync('token', newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return apiClient(originalRequest);
-        } catch (refreshError) {
-          try {
-            await AsyncStorage.removeItem('token');
-            await AsyncStorage.removeItem('refresh_token');
-            await AsyncStorage.removeItem('user');
-          } catch (e) {
-            // ignore
-          }
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
+        }
+      } catch (refreshError) {
+        try {
+          await SecureStore.deleteItemAsync('token');
+          await SecureStore.deleteItemAsync('refresh_token');
+          await SecureStore.deleteItemAsync('user');
+        } catch (e) {
+          // ignore
         }
       }
     }

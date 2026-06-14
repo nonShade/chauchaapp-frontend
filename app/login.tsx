@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import {
   View,
   TextInput,
@@ -93,9 +93,9 @@ export default function LoginScreen() {
         // Guardar los datos del usuario en localStorage
         if (data.user) {
           try {
-            await AsyncStorage.setItem('user', JSON.stringify(data.user));
+            await SecureStore.setItemAsync('user', JSON.stringify(data.user));
           } catch (e) {
-            console.error('Error al guardar datos de usuario en AsyncStorage:', e);
+            console.error('Error al guardar datos de usuario en SecureStore:', e);
           }
         }
         router.replace("/(tabs)");

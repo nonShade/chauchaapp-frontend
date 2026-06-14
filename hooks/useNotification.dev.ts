@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from 'expo-secure-store';
 import { Notification } from "@/types/notification";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -17,7 +17,7 @@ const STORAGE_KEY = "debug_notifications_seen";
 // Lee los seen_at guardados y los aplica sobre las notificaciones debug base
 async function loadDebugNotifications(): Promise<Notification[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await SecureStore.getItemAsync(STORAGE_KEY);
     const seenMap: Record<string, string> = raw ? JSON.parse(raw) : {};
     return DEBUG_NOTIFICATIONS.map((n) => ({
       ...n,
@@ -31,16 +31,16 @@ async function loadDebugNotifications(): Promise<Notification[]> {
 // Guarda el seen_at de una notificación debug
 async function saveDebugSeen(id: string, seenAt: string): Promise<void> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await SecureStore.getItemAsync(STORAGE_KEY);
     const seenMap: Record<string, string> = raw ? JSON.parse(raw) : {};
     seenMap[id] = seenAt;
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seenMap));
+    await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(seenMap));
   } catch {}
 }
 
 // Borra todos los seen_at guardados (reset a "nuevas")
 export async function resetDebugNotifications(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await SecureStore.deleteItemAsync(STORAGE_KEY);
 }
 
 // Merge debug + backend sin duplicados
