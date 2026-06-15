@@ -44,7 +44,6 @@ export default function PerfilScreen() {
   const [newsTopics, setNewsTopics] = useState<TopicOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draftName, setDraftName] = useState('');
   const [draftEmail, setDraftEmail] = useState('');
@@ -610,30 +609,6 @@ export default function PerfilScreen() {
           ))}
         </View>
 
-        {/* Apariencia */}
-        <View style={styles.section}>
-          <View style={styles.appearanceHeader}>
-            <FontAwesome5 name="moon" size={18} color="#6B7280" />
-            <Text style={styles.sectionTitle}>Apariencia</Text>
-          </View>
-
-          <View style={styles.appearanceModeContainer}>
-            <View style={styles.appearanceModeRow}>
-              <View style={styles.toggleContent}>
-                <FontAwesome5 name="moon" size={18} color="#6B7280" />
-                <Text style={styles.toggleLabel}>Modo oscuro</Text>
-              </View>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                trackColor={{ false: '#333', true: '#00a452' }}
-                thumbColor={darkMode ? '#FFFFFF' : '#999'}
-              />
-            </View>
-            <Text style={styles.modeText}>Activado</Text>
-          </View>
-        </View>
-
         {/* Grupo Familiar */}
         <View style={styles.section}>
           <View style={styles.familyHeader}>
@@ -983,12 +958,6 @@ const styles = StyleSheet.create({
     color: APP_THEME.text.secondary,
     marginBottom: 12,
   },
-  appearanceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1079,27 +1048,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: APP_THEME.text.primary,
     fontWeight: '500',
-  },
-  appearanceModeContainer: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: APP_THEME.card.border,
-  },
-  appearanceModeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modeIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  modeText: {
-    fontSize: 12,
-    color: APP_THEME.text.secondary,
-    marginLeft: 28,
   },
   logoutBtn: {
     flexDirection: 'row',
