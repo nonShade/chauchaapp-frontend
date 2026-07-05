@@ -47,6 +47,9 @@ jobs:
           BUILD_URL=$(eas build:list --platform android --limit 1 --json --non-interactive | jq -r '.[0].artifacts.buildUrl')
           echo "apk_url=$BUILD_URL" >> $GITHUB_OUTPUT
 
+      - name: Download APK
+        run: curl -fL -o chauchaapp-build-${{ github.run_number }}.apk "${{ steps.get_url.outputs.apk_url }}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -65,5 +68,6 @@ jobs:
 
             ### Link directo EAS
             ${{ steps.get_url.outputs.apk_url }}
+          files: chauchaapp-build-${{ github.run_number }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
