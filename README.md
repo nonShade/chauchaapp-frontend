@@ -48,19 +48,24 @@ app/                            ← Rutas de la aplicación (Expo Router)
 │   ├── wallet.tsx              ← Cartola / transacciones
 │   ├── news.tsx                ← Noticias financieras
 │   ├── learn.tsx               ← Módulos de aprendizaje
-│   └── profile.tsx             ← Perfil de usuario
+│   ├── profile.tsx             ← Perfil de usuario
+├── index.tsx                   ← Redirección inicial
 ├── login.tsx
 ├── register.tsx
 ├── learn-detail.tsx            ← Detalle de un módulo
 ├── learn-quiz.tsx              ← Quiz de evaluación
 ├── new-transaction.tsx         ← Formulario de nueva transacción
+├── modal.tsx                   ← Modal de ejemplo
 └── notifications.tsx
 
 components/                     ← Componentes reutilizables organizados por sección
 services/
 └── api/
+    ├── adapters.ts             ← Adaptadores para formateo de datos
     ├── apiClient.ts            ← Cliente Axios centralizado (auth, refresh, errores)
+    ├── asyncTask.ts            ← Manejo de polling para tareas asíncronas
     ├── auth.ts
+    ├── backgroundRequest.ts    ← Peticiones en segundo plano
     ├── transactions.ts
     ├── news.ts
     ├── tips.ts
@@ -136,7 +141,7 @@ El cliente maneja automáticamente la renovación de tokens:
 2. Si la renovación tiene éxito, reintenta la petición original con el nuevo token
 3. Si la renovación falla (refresh token expirado o inválido), elimina ambos tokens y redirige al login
 
-Los tokens se almacenan en `expo-secure-store`, que usa almacenamiento cifrado provisto por el sistema operativo del dispositivo (Keychain en iOS, EncryptedSharedPreferences en Android).
+Los tokens se almacenan de manera primaria en `AsyncStorage`, proveyendo almacenamiento persistente en el dispositivo, y se utiliza `expo-secure-store` (almacenamiento cifrado provisto por el sistema operativo del dispositivo) como método de respaldo para mantener compatibilidad o casos de falla.
 
 ---
 
